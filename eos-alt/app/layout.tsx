@@ -1,0 +1,83 @@
+import type { Metadata } from "next";
+import { Inter, JetBrains_Mono } from "next/font/google";
+import { Toaster } from "sonner";
+import Link from "next/link";
+import AuthButton from "@/components/AuthButton";
+import "./globals.css";
+
+const inter = Inter({
+  variable: "--font-sans",
+  subsets: ["latin"],
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  variable: "--font-mono",
+  subsets: ["latin"],
+});
+
+export const metadata: Metadata = {
+  title: "Emergency OS - Flood Lookout",
+  description: "Personalized location-based flood alerts and shelter navigation.",
+  manifest: "/manifest.json",
+};
+
+export const viewport = {
+  themeColor: "#09090b",
+};
+
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
+  return (
+    <html lang="en" className="dark">
+      <body
+        className={`${inter.variable} ${jetbrainsMono.variable} antialiased bg-background text-foreground min-h-screen flex flex-col`}
+      >
+        <header className="border-b border-border bg-panel/80 backdrop-blur-sm sticky top-0 z-50">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex h-16 items-center justify-between">
+              <div className="flex-shrink-0 flex items-center gap-2">
+                <div className="w-8 h-8 rounded bg-accent flex items-center justify-center">
+                  <span className="text-accent-foreground font-bold font-mono text-lg block leading-none select-none">!</span>
+                </div>
+                <Link href="/" className="font-bold tracking-widest uppercase text-lg">
+                  EMERGENCY<span className="text-accent opacity-90 block text-[10px] leading-tight mt-[-2px]">OS // FLOOD</span>
+                </Link>
+              </div>
+              <nav className="hidden md:flex space-x-1 font-mono text-sm uppercase mr-8">
+                <Link href="/" className="px-4 py-2 text-foreground/70 hover:text-accent hover:bg-border/50 rounded transition-colors">
+                  Overview
+                </Link>
+                <Link href="/map" className="px-4 py-2 text-foreground/70 hover:text-accent hover:bg-border/50 rounded transition-colors">
+                  Tactical Map
+                </Link>
+              </nav>
+              <AuthButton />
+            </div>
+          </div>
+        </header>
+
+        <main className="flex-grow">
+          {children}
+        </main>
+
+        <Toaster
+          theme="dark"
+          position="bottom-right"
+          toastOptions={{
+            style: {
+              background: '#09090b',
+              border: '1px solid #27272a',
+              color: '#facc15',
+              fontFamily: 'var(--font-mono)',
+              textTransform: 'uppercase',
+              borderRadius: '2px',
+            },
+          }}
+        />
+      </body>
+    </html>
+  );
+}
