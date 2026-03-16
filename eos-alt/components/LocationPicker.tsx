@@ -5,7 +5,7 @@ import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import MaplibreGeocoder from "@maplibre/maplibre-gl-geocoder";
 import "@maplibre/maplibre-gl-geocoder/dist/maplibre-gl-geocoder.css";
-import { saveLocation } from "@/app/profile/actions";
+import { getDistricts, saveLocation } from "@/app/profile/actions";
 import { toast } from "sonner";
 
 interface State {
@@ -20,23 +20,24 @@ interface District {
 
 export default function LocationPicker({
   states,
-  districts,
-}: {
-  states: State[];
-  districts: District[];
-}) {
+  initialDistricts = [] }: {
+    states: State[], initialDistricts?: District[]
+  }) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<maplibregl.Map | null>(null);
   const marker = useRef<maplibregl.Marker | null>(null);
+
+  const [currentDistricts, setCurrentDistricts] = useState<District[]>(initialDistricts);
+  const [isLoadingDistricts, setIsLoadingDistricts] = useState(false);
 
   const [selectedState, setSelectedState] = useState<number | "">("");
   const [selectedDistrict, setSelectedDistrict] = useState<number | "">("");
   const [coordinates, setCoordinates] = useState<{ lat: number; lng: number } | null>(null);
 
   // Filter districts based on selected state
-  const availableDistricts = selectedState
-    ? districts.filter(d => (d as any).state === selectedState)
-    : [];
+  // const availableDistricts = selectedState
+  //   ? districts.filter(d => (d as any).state === selectedState)
+  //   : [];
 
   useEffect(() => {
     if (map.current) return;
@@ -153,6 +154,28 @@ export default function LocationPicker({
     }
   };
 
+  const handleStateChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const stateCode = e.target.value ? Number(e.target.value) : "";
+    setSelectedState(stateCode);
+    setSelectedDistrict(""); // Reset district
+
+    if (stateCode) {
+      setIsLoadingDistricts(true);
+      try {
+        // 2. Fetch districts for the specific state from the database
+        const result = await getDistricts(stateCode);
+        const normalized = Array.isArray(result) ? result : (result as any)?.data || [];
+        setCurrentDistricts(normalized);
+      } catch (err) {
+        toast.error("Failed to load districts");
+      } finally {
+        setIsLoadingDistricts(false);
+      }
+    } else {
+      setCurrentDistricts([]);
+    }
+  };
+
   return (
     <div className="flex flex-col gap-6 w-full h-full min-h-[500px]">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -161,10 +184,7 @@ export default function LocationPicker({
           <select
             className="rounded-sm px-4 py-2 bg-background border border-border text-foreground font-mono focus:outline-none focus:border-accent"
             value={selectedState}
-            onChange={(e) => {
-              setSelectedState(e.target.value ? Number(e.target.value) : "");
-              setSelectedDistrict(""); // Reset district when state changes
-            }}
+            onChange={handleStateChange} // 3. Use the new handler
           >
             <option value="">-- Select State --</option>
             {states.map((s) => (
@@ -178,11 +198,11 @@ export default function LocationPicker({
           <select
             className="rounded-sm px-4 py-2 bg-background border border-border text-foreground font-mono focus:outline-none focus:border-accent disabled:opacity-50"
             value={selectedDistrict}
-            onChange={(e) => setSelectedDistrict(e.target.value ? Number(e.target.value) : "")}
+            onChange={(e) => setSelectedDistrict(Number(e.target.value))}
             disabled={!selectedState}
           >
-            <option value="">-- Select District --</option>
-            {availableDistricts.map((d) => (
+            <option value="">{isLoadingDistricts ? "Loading..." : "-- Select District --"}</option>
+            {currentDistricts.map((d) => (
               <option key={d.id} value={d.id}>{d.district}</option>
             ))}
           </select>
