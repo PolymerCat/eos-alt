@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { getAlerts, PPS } from "./actions";
+import { getUserLocations } from "./profile/actions";
 import { createClient } from "@/utils/supabase/server";
 
 export default async function Home() {
@@ -6,6 +8,28 @@ export default async function Home() {
   const {
     data: { user },
   } = await supabase.auth.getUser();
+
+  const alerts: PPS[] = await getAlerts();
+
+  // Array of user's saved districts
+  let savedDistricts: string[] = [];
+
+  if (user) {
+    const locations = await getUserLocations();
+    // Safely extract districts handling cases where relations might return objects or arrays
+    savedDistricts = locations
+      .map(loc => {
+        const d: any = loc.districts;
+        const districtName = Array.isArray(d) ? d[0]?.district : d?.district;
+        return typeof districtName === 'string' ? districtName.toLowerCase().trim() : undefined;
+      })
+      .filter((d): d is string => Boolean(d));
+  }
+
+  // If user is not logged in, show all. If logged in, filter by their districts.
+  const validAlerts = user
+    ? alerts.filter(center => savedDistricts.includes(center.daerah.toLowerCase().trim()))
+    : alerts;
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -27,9 +51,48 @@ export default async function Home() {
             <span className="w-2 h-2 rounded-full bg-accent animate-pulse"></span>
             Active Alerts
           </h2>
-          <div className="mt-4 p-4 bg-background border border-border/50 rounded flex flex-col items-center justify-center text-center min-h-[200px]">
-            <p className="font-mono text-foreground/50 text-sm">Awaiting remote telemetry...</p>
-          </div>
+          {(!validAlerts || validAlerts.length === 0) ? (
+            <div className="mt-4 p-4 bg-background border border-border/50 rounded flex flex-col items-center justify-center text-center min-h-[200px]">
+              <p className="font-mono text-foreground/50 text-sm">
+                {user ? (
+                  savedDistricts.length === 0
+                    ? "You have no saved locations. Add some in your profile."
+                    : "No active alerts in your saved districts."
+                ) : (
+                  "Awaiting remote telemetry..."
+                )}
+              </p>
+            </div>
+          ) : (
+            <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {validAlerts.map((center) => (
+                <div key={center.id} className="bg-panel border border-border p-4 rounded-sm flex flex-col">
+                  <div className="flex justify-between items-start mb-2 gap-2">
+                    <h2 className="font-bold text-accent uppercase text-sm leading-tight">{center.name}</h2>
+                    <span className="text-[10px] bg-background px-2 py-0.5 border border-border whitespace-nowrap">
+                      {center.negeri}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 text-xs font-mono text-foreground/70 flex-grow mt-2">
+                    <div className="flex flex-col">
+                      <span>Victims:</span>
+                      <span className="text-foreground font-bold text-sm">{center.mangsa}</span>
+                    </div>
+                    <div className="flex flex-col">
+                      <span>Capacity:</span>
+                      <span className="text-foreground font-bold text-sm">{center.kapasiti}</span>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 pt-2 border-t border-border/30 text-[10px] text-foreground/40 italic flex flex-col gap-1">
+                    <span>Sector: {center.daerah} - {center.mukim}</span>
+                    <span className="text-accent/80">Coords: {center.latti}, {center.longi}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* User Status / Quick Actions */}
@@ -60,3 +123,4 @@ export default async function Home() {
     </div>
   );
 }
+
