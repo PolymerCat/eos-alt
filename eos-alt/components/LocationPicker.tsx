@@ -93,6 +93,11 @@ export default function LocationPicker({
       if (e.result && e.result.center) {
         const coords = e.result.center;
         updateMarker(coords[0], coords[1]);
+        map.current?.flyTo({
+          center: coords,
+          zoom: 14,
+          essential: true
+        });
       }
     });
 
