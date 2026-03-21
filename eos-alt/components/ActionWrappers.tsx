@@ -44,9 +44,9 @@ export function DeleteButton({ actionFunc }: DeleteButtonProps) {
     startTransition(async () => {
       try {
         await actionFunc();
-        toast.success("Beacon Purged");
+        toast.success("Location Deleted");
       } catch (err: any) {
-        toast.error("Purge Failed", {
+        toast.error("Delete Failed", {
           description: err.message || "An unknown error occurred.",
         });
       }
@@ -58,9 +58,9 @@ export function DeleteButton({ actionFunc }: DeleteButtonProps) {
       type="button"
       onClick={handleDelete}
       disabled={isPending}
-      className="text-red-500 hover:text-red-400 font-mono text-xs uppercase underline disabled:opacity-50"
+      className="text-red-500 hover:text-red-600 text-sm font-medium hover:underline disabled:opacity-50"
     >
-      {isPending ? "[Purging...]" : "[Purge]"}
+      {isPending ? "Deleting..." : "Delete"}
     </button>
   );
 }

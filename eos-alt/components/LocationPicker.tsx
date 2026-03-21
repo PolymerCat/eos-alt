@@ -44,7 +44,7 @@ export default function LocationPicker({
 
     map.current = new maplibregl.Map({
       container: mapContainer.current!,
-      style: "https://tiles.openfreemap.org/styles/dark",
+      style: "https://tiles.openfreemap.org/styles/liberty",
       center: [101.9758, 4.2105], // Center on Malaysia
       zoom: 5.5,
     });
@@ -123,7 +123,7 @@ export default function LocationPicker({
       marker.current.setLngLat([lng, lat]);
     } else {
       const el = document.createElement('div');
-      el.className = 'w-4 h-4 rounded-full bg-accent border-2 border-background shadow-[0_0_10px_rgba(250,204,21,0.8)] animate-pulse';
+      el.className = 'w-4 h-4 rounded-full bg-accent border-2 border-background shadow-md';
 
       marker.current = new maplibregl.Marker({ element: el })
         .setLngLat([lng, lat])
@@ -148,13 +148,13 @@ export default function LocationPicker({
         marker.current.remove();
         marker.current = null;
       }
-      toast.success("Beacon Registered", {
-        description: "Location telemetry saved to database."
+      toast.success("Location Saved", {
+        description: "Your location has been saved."
       });
     } catch (err) {
       console.error(err);
-      toast.error("Registration Failed", {
-        description: "Could not save beacon. Check database connection."
+      toast.error("Save Failed", {
+        description: "Could not save location. Please try again."
       });
     }
   };
@@ -185,9 +185,9 @@ export default function LocationPicker({
     <div className="flex flex-col gap-6 w-full h-full min-h-[500px]">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="flex flex-col gap-1">
-          <label className="text-sm font-mono uppercase text-foreground/70">State</label>
+          <label className="text-sm font-medium text-foreground/70">State</label>
           <select
-            className="rounded-sm px-4 py-2 bg-background border border-border text-foreground font-mono focus:outline-none focus:border-accent"
+            className="rounded-md px-4 py-2 bg-background border border-border text-foreground font-medium focus:outline-none focus:border-accent"
             value={selectedState}
             onChange={handleStateChange} // 3. Use the new handler
           >
@@ -199,9 +199,9 @@ export default function LocationPicker({
         </div>
 
         <div className="flex flex-col gap-1">
-          <label className="text-sm font-mono uppercase text-foreground/70">District</label>
+          <label className="text-sm font-medium text-foreground/70">District</label>
           <select
-            className="rounded-sm px-4 py-2 bg-background border border-border text-foreground font-mono focus:outline-none focus:border-accent disabled:opacity-50"
+            className="rounded-md px-4 py-2 bg-background border border-border text-foreground font-medium focus:outline-none focus:border-accent disabled:opacity-50"
             value={selectedDistrict}
             onChange={(e) => setSelectedDistrict(Number(e.target.value))}
             disabled={!selectedState}
@@ -214,34 +214,34 @@ export default function LocationPicker({
         </div>
       </div>
 
-      <div className="flex flex-col justify-between items-start gap-2 border-l-2 border-accent pl-2">
-        <p className="font-mono text-sm text-foreground/90 uppercase">Pinpoint Location</p>
-        <p className="font-mono text-xs text-foreground/50">Search for an address or click directly on the map to set your alert beacon.</p>
+      <div className="flex flex-col justify-between items-start gap-1 border-l-2 border-accent pl-3">
+        <p className="font-semibold text-foreground">Pinpoint Location</p>
+        <p className="text-sm text-foreground/60">Search for an address or click directly on the map to set your location.</p>
       </div>
 
-      <div className="relative w-full flex-grow border border-border bg-background rounded-sm overflow-hidden min-h-[300px]">
+      <div className="relative w-full flex-grow border border-border bg-background rounded-lg overflow-hidden min-h-[300px]">
         <div ref={mapContainer} className="w-full h-full absolute inset-0" />
 
         {!coordinates && (
           <div className="absolute inset-0 pointer-events-none flex items-center justify-center bg-background/20 backdrop-blur-[1px]">
-            <p className="font-mono text-accent bg-panel px-4 py-2 border border-accent/20 uppercase text-xs tracking-widest shadow-lg">
-              Awaiting Coordinates...
+            <p className="text-foreground bg-panel px-4 py-2 border border-border rounded-md text-sm shadow-md font-medium">
+              Select a location on the map
             </p>
           </div>
         )}
       </div>
 
-      <div className="flex justify-between items-center bg-panel border border-border p-4 rounded-sm">
-        <div className="font-mono text-xs text-foreground/70 flex flex-col gap-1">
-          <span>LAT: <span className="text-foreground font-bold">{coordinates ? coordinates.lat.toFixed(6) : "---.------"}</span></span>
-          <span>LNG: <span className="text-foreground font-bold">{coordinates ? coordinates.lng.toFixed(6) : "---.------"}</span></span>
+      <div className="flex justify-between items-center bg-panel border border-border p-4 rounded-xl shadow-sm">
+        <div className="text-sm text-foreground/70 flex flex-col gap-1">
+          <span>LAT: <span className="text-foreground font-semibold">{coordinates ? coordinates.lat.toFixed(6) : "---.------"}</span></span>
+          <span>LNG: <span className="text-foreground font-semibold">{coordinates ? coordinates.lng.toFixed(6) : "---.------"}</span></span>
         </div>
         <button
           onClick={handleSave}
           disabled={!selectedState || !selectedDistrict || !coordinates}
-          className="bg-accent text-accent-foreground font-bold font-mono py-2 px-6 uppercase text-sm hover:brightness-110 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          className="bg-accent text-accent-foreground font-medium rounded-md py-2 px-6 text-sm hover:bg-accent/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          Register Beacon
+          Save Location
         </button>
       </div>
     </div>

@@ -22,7 +22,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport = {
-  themeColor: "#09090b",
+  themeColor: "#f8fafc",
 };
 
 export default function RootLayout({
@@ -31,27 +31,27 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark">
+    <html lang="en">
       <body
         className={`${inter.variable} ${jetbrainsMono.variable} antialiased bg-background text-foreground min-h-screen flex flex-col`}
       >
-        <header className="border-b border-border bg-panel/80 backdrop-blur-sm sticky top-0 z-50">
+        <header className="border-b border-border bg-panel/90 backdrop-blur-sm sticky top-0 z-50">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex h-16 items-center justify-between">
               <div className="flex-shrink-0 flex items-center gap-2">
-                <div className="w-8 h-8 rounded bg-accent flex items-center justify-center">
-                  <span className="text-accent-foreground font-bold font-mono text-lg block leading-none select-none">!</span>
+                <div className="w-8 h-8 rounded-lg bg-accent flex items-center justify-center shadow-sm">
+                  <span className="text-accent-foreground font-bold text-lg block leading-none select-none">E</span>
                 </div>
-                <Link href="/" className="font-bold tracking-widest uppercase text-lg">
-                  EMERGENCY<span className="text-accent opacity-90 block text-[10px] leading-tight mt-[-2px]">OS // FLOOD</span>
+                <Link href="/" className="font-bold text-lg text-foreground hover:opacity-80 transition-opacity">
+                  Emergency <span className="text-accent opacity-90">OS</span>
                 </Link>
               </div>
-              <nav className="hidden md:flex space-x-1 font-mono text-sm uppercase mr-8">
-                <Link href="/" className="px-4 py-2 text-foreground/70 hover:text-accent hover:bg-border/50 rounded transition-colors">
+              <nav className="hidden md:flex space-x-2 font-medium text-sm mr-8">
+                <Link href="/" className="px-4 py-2 text-foreground/80 hover:text-accent hover:bg-foreground/5 rounded-md transition-colors">
                   Overview
                 </Link>
-                <Link href="/map" className="px-4 py-2 text-foreground/70 hover:text-accent hover:bg-border/50 rounded transition-colors">
-                  Tactical Map
+                <Link href="/map" className="px-4 py-2 text-foreground/80 hover:text-accent hover:bg-foreground/5 rounded-md transition-colors">
+                  Map
                 </Link>
               </nav>
               <AuthButton />
@@ -64,16 +64,14 @@ export default function RootLayout({
         </main>
 
         <Toaster
-          theme="dark"
           position="bottom-right"
           toastOptions={{
             style: {
-              background: '#09090b',
-              border: '1px solid #27272a',
-              color: '#facc15',
-              fontFamily: 'var(--font-mono)',
-              textTransform: 'uppercase',
-              borderRadius: '2px',
+              background: 'var(--panel)',
+              border: '1px solid var(--border)',
+              color: 'var(--foreground)',
+              borderRadius: '8px',
+              fontFamily: 'var(--font-sans)',
             },
           }}
         />
