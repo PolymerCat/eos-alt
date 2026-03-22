@@ -31,31 +31,14 @@ export default function Map() {
         });
 
         map.current.on('load', async () => {
-            // 1. Fetch Malaysia GeoJSON (ISO code 'MYS')
-            // This is a reliable source for country boundaries
-            const response = await fetch('https://raw.githubusercontent.com/datasets/geo-countries/master/data/countries.geojson');
+            // 1. Fetch Local QGIS-Clipped GeoJSON for Map Borders
+            const response = await fetch('/MY-box.geojson');
             const data = await response.json();
 
 
             // 1. Add Background/Borders & Fog of War
             try {
-                // Create the Box Polygon for borders
-                const boxGeoJSON: any = {
-                    type: 'Feature',
-                    properties: {},
-                    geometry: {
-                        type: 'Polygon',
-                        coordinates: [[
-                            [malaysiaBounds[0][0], malaysiaBounds[0][1]], // SW
-                            [malaysiaBounds[1][0], malaysiaBounds[0][1]], // SE
-                            [malaysiaBounds[1][0], malaysiaBounds[1][1]], // NE
-                            [malaysiaBounds[0][0], malaysiaBounds[1][1]], // NW
-                            [malaysiaBounds[0][0], malaysiaBounds[0][1]]  // SW
-                        ]]
-                    }
-                };
-
-                map.current?.addSource('malaysia-source', { type: 'geojson', data: boxGeoJSON });
+                map.current?.addSource('malaysia-source', { type: 'geojson', data });
 
 
 

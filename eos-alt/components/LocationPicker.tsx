@@ -57,7 +57,7 @@ export default function LocationPicker({
           const response = await fetch(request);
           const geojson = await response.json();
           for (const feature of geojson.features) {
-            const center = [
+            const center: [number, number] = [
               feature.bbox[0] + (feature.bbox[2] - feature.bbox[0]) / 2,
               feature.bbox[1] + (feature.bbox[3] - feature.bbox[1]) / 2,
             ];
