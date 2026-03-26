@@ -2,6 +2,19 @@
 
 const BASE = "https://infobencanajkmv2.jkm.gov.my/api/pusat-buka.php?a=0&b=1";
 
+export interface WeatherWarning {
+    warning_issue: {
+        title_bm: string;
+        title_en: string;
+    };
+    valid_from: string;
+    valid_to: string;
+    text_bm: string;
+    text_en: string;
+    heading_bm: string;
+    heading_en: string;
+}
+
 export interface PPS {
     id: string;
     name: string;
@@ -47,6 +60,22 @@ export async function getAlerts(): Promise<PPS[]> {
         return cleanData;
     } catch (error) {
         console.error("JKM Fetch Error:", error);
+        return [];
+    }
+}
+
+export async function getWeatherWarnings(): Promise<WeatherWarning[]> {
+    try {
+        const response = await fetch("https://api.data.gov.my/weather/warning/", {
+            next: { revalidate: 300 }
+        });
+
+        if (!response.ok) throw new Error("Failed to fetch weather warnings");
+
+        const data = await response.json();
+        return Array.isArray(data) ? data : (data?.data || []);
+    } catch (error) {
+        console.error("Weather Warning Fetch Error:", error);
         return [];
     }
 }
