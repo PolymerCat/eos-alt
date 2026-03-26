@@ -6,8 +6,9 @@ import 'maplibre-gl/dist/maplibre-gl.css';
 import mask from '@turf/mask';
 import rewind from '@turf/rewind';
 import { FeatureCollection, MultiPolygon, Polygon } from 'geojson';
+import { PPS } from '@/app/actions';
 
-export default function Map() {
+export default function Map({ alerts = [] }: { alerts?: PPS[] }) {
     const mapContainer = useRef<HTMLDivElement>(null);
     const map = useRef<maplibregl.Map | null>(null);
 
@@ -65,30 +66,6 @@ export default function Map() {
                     });
                 }
 
-                // // Add bounding box borders
-                // map.current?.addLayer({
-                //     id: 'malaysia-border',
-                //     type: 'line',
-                //     source: 'malaysia-source',
-                //     paint: {
-                //         'line-color': '#2563eb', // Corporate Blue
-                //         'line-width': 2,
-                //         'line-blur': 1,
-                //         'line-dasharray': [2, 2],
-                //     }
-                // });
-
-                // map.current?.addLayer({
-                //     id: 'malaysia-border-glow',
-                //     type: 'line',
-                //     source: 'malaysia-source',
-                //     paint: {
-                //         'line-color': '#2563eb',
-                //         'line-width': 8,
-                //         'line-blur': 10,
-                //         'line-opacity': 0.4
-                //     }
-                // });
 
             } catch (err) {
                 console.error("Map boundaries rendering error:", err);
@@ -182,55 +159,141 @@ export default function Map() {
             // EXECUTE the mask function
             //await initMask();
 
-            // 2. Add Test Data Points ON TOP (Execution order ensures z-index)
+            // 2. Add Actual PPS Data Points ON TOP
             try {
-                map.current?.addSource('test-data', {
+                const features = alerts.map(alert => ({
+                    type: "Feature",
+                    geometry: {
+                        type: "Point",
+                        coordinates: [parseFloat(alert.longi), parseFloat(alert.latti)]
+                    },
+                    properties: {
+                        title: alert.name,
+                        daerah: alert.daerah,
+                        mangsa: alert.mangsa,
+                        kapasiti: alert.kapasiti
+                    }
+                }));
+
+                map.current?.addSource('pps-data', {
                     "type": "geojson",
                     "data": {
-                        "type": "Feature",
-                        "geometry": {
-                            "type": "Point",
-                            "coordinates": [101.76053791172866, 3.150091295838452]
-                        },
-                        "properties": {
-                            "title": "Ampang LRT Station",
-                            "marker-symbol": "monument"
-                        }
+                        "type": "FeatureCollection",
+                        "features": features as any
                     }
                 });
 
-                // test adding own point
-                map.current?.addLayer({
-                    'id': 'test-data-point',
-                    'type': 'circle',
-                    'source': 'test-data',
-                    'paint': {
-                        'circle-radius': 8,
-                        'circle-color': '#ef4444', // Red marker
-                        'circle-stroke-width': 4,
-                        'circle-stroke-color': '#ffffff'
-                    }
-                });
+                const size = 100;
+                const pulsingDot: any = {
+                    width: size,
+                    height: size,
+                    data: new Uint8Array(size * size * 4),
 
-                // Adding text label separate from the icon
-                map.current?.addLayer({
-                    'id': 'test-data-label',
-                    'type': 'symbol',
-                    'source': 'test-data',
-                    'layout': {
-                        'text-field': ['get', 'title'],
-                        // Removed text-font to use default.
-                        'text-offset': [0, 1.5],
-                        'text-anchor': 'top'
+                    onAdd: function () {
+                        const canvas = document.createElement('canvas');
+                        canvas.width = this.width;
+                        canvas.height = this.height;
+                        this.context = canvas.getContext('2d', { willReadFrequently: true });
                     },
-                    'paint': {
-                        'text-color': '#1e293b',
-                        'text-halo-color': '#ffffff',
-                        'text-halo-width': 2
+
+                    render: function () {
+                        const duration = 1500;
+                        const t = (performance.now() % duration) / duration;
+
+                        const radius = (size / 2) * 0.15;
+                        const outerRadius = (size / 2) * 0.5 * t + radius;
+                        const context = this.context;
+
+                        context.clearRect(0, 0, this.width, this.height);
+                        
+                        // draw outer circle
+                        context.beginPath();
+                        context.arc(this.width / 2, this.height / 2, outerRadius, 0, Math.PI * 2);
+                        context.fillStyle = `rgba(239, 68, 68, ${1 - t})`; // fading red
+                        context.fill();
+
+                        // draw inner circle
+                        context.beginPath();
+                        context.arc(this.width / 2, this.height / 2, radius, 0, Math.PI * 2);
+                        context.fillStyle = 'rgba(239, 68, 68, 1)';
+                        context.strokeStyle = 'white';
+                        context.lineWidth = 2 + 1 * (1 - t);
+                        context.fill();
+                        context.stroke();
+
+                        this.data = context.getImageData(0, 0, this.width, this.height).data;
+                        map.current?.triggerRepaint();
+
+                        return true;
+                    }
+                };
+
+                if (!map.current?.hasImage('pulsing-dot')) {
+                    map.current?.addImage('pulsing-dot', pulsingDot as any, { pixelRatio: 2 });
+                }
+
+                map.current?.addLayer({
+                    'id': 'pps-layer',
+                    'type': 'symbol',
+                    'source': 'pps-data',
+                    'layout': {
+                        'icon-image': 'pulsing-dot',
+                        'icon-allow-overlap': true
                     }
                 });
+
+                // Create a popup, but don't add it to the map yet.
+                const popup = new maplibregl.Popup({
+                    closeButton: false,
+                    closeOnClick: true
+                });
+
+                const buildPopupHTML = (props: any) => `
+                    <div style="padding: 4px; max-width: 250px;">
+                        <h3 style="font-weight: 700; font-size: 14px; margin-bottom: 4px; color: #1e293b;">${props?.title}</h3>
+                        <p style="font-size: 12px; margin: 0; padding-bottom: 8px; border-bottom: 1px solid #e2e8f0; color: #475569;">Daerah: ${props?.daerah}</p>
+                        <div style="margin-top: 8px; font-size: 12px; font-weight: 600; color: #dc2626; display: flex; gap: 16px;">
+                            <span>Mangsa: ${props?.mangsa}</span>
+                            <span>Kapasiti: ${props?.kapasiti}</span>
+                        </div>
+                    </div>
+                `;
+
+                // Desktop hover interaction
+                map.current?.on('mouseenter', 'pps-layer', (e) => {
+                    if (!e.features || e.features.length === 0) return;
+                    map.current!.getCanvas().style.cursor = 'pointer';
+                    
+                    const coordinates = (e.features[0].geometry as any).coordinates.slice();
+                    const description = buildPopupHTML(e.features[0].properties);
+
+                    while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
+                        coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
+                    }
+
+                    popup.setLngLat(coordinates as [number, number])
+                        .setHTML(description)
+                        .addTo(map.current!);
+                });
+
+                map.current?.on('mouseleave', 'pps-layer', () => {
+                    map.current!.getCanvas().style.cursor = '';
+                    popup.remove();
+                });
+
+                // Tap interactions for mobile/clicking edge case
+                map.current?.on('click', 'pps-layer', (e) => {
+                    if (!e.features || e.features.length === 0) return;
+                    const coordinates = (e.features[0].geometry as any).coordinates.slice();
+                    const description = buildPopupHTML(e.features[0].properties);
+
+                    popup.setLngLat(coordinates as [number, number])
+                        .setHTML(description)
+                        .addTo(map.current!);
+                });
+
             } catch (err) {
-                console.error("Test data layer error:", err);
+                console.error("PPS data layer error:", err);
             }
         });
 
