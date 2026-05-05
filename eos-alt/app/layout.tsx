@@ -4,6 +4,8 @@ import { Toaster } from "sonner";
 import Link from "next/link";
 import AuthButton from "@/components/AuthButton";
 import "./globals.css";
+//import 'maplibre-gl/dist/maplibre-gl.css';
+
 
 const inter = Inter({
   variable: "--font-sans",
