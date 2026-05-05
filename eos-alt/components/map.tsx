@@ -3,8 +3,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import maplibregl from 'maplibre-gl';
 import { PPS } from '@/app/actions';
-import MapMarker from './MapMarker';
 import MapSidebar from './MapSidebar';
+import MapMarkersLayer from './MapMarkersLayer';
 
 interface MapProps {
   ppsData: PPS[];
@@ -19,7 +19,6 @@ export default function Map({ ppsData }: MapProps) {
   useEffect(() => {
     if (map.current) return;
 
-    // Initialize with OpenFreeMap
     map.current = new maplibregl.Map({
       container: mapContainer.current!,
       style: 'https://tiles.openfreemap.org/styles/liberty',
@@ -32,15 +31,14 @@ export default function Map({ ppsData }: MapProps) {
 
     map.current.on('load', async () => {
       try {
-        // 2. Fetch Malaysia's boundary from local geojson
+        // Fetch boundary from local geojson
         const res = await fetch('/MY-box.geojson');
         const geojson = await res.json();
         
-        // Extract Malaysia feature
-        const malaysiaFeature = geojson.features.find((f: any) => f.properties.name === 'Malaysia');
+        // Add sources (using entire geojson if Malaysia feature not found)
+        const featureData = geojson.features?.find((f: any) => f.properties?.name === 'Malaysia') || geojson;
 
-        // Add sources
-        map.current?.addSource('malaysia-source', { type: 'geojson', data: malaysiaFeature });
+        map.current?.addSource('malaysia-source', { type: 'geojson', data: featureData });
 
         // Add Malaysia border
         map.current?.addLayer({
@@ -53,41 +51,57 @@ export default function Map({ ppsData }: MapProps) {
             'line-blur': 1,
           }
         });
-
-        // Mark map as loaded
-        setMapLoaded(true);
-
       } catch (err) {
         console.error("Map initialization error:", err);
+      } finally {
+        setMapLoaded(true);
       }
     });
 
     return () => {
       map.current?.remove();
+      map.current = null;
     };
   }, [ppsData]);
 
+  const handleShelterClick = (pps: PPS) => {
+    const lat = parseFloat(pps.latti);
+    const lng = parseFloat(pps.longi);
+    if (!isNaN(lat) && !isNaN(lng) && map.current) {
+      map.current.flyTo({ center: [lng, lat], zoom: 12, essential: true });
+      if (window.innerWidth < 768) {
+        setSidebarOpen(false);
+      }
+    }
+  };
+
   return (
-    <div className="fixed inset-0 w-full h-full">
-      <MapSidebar ppsData={ppsData} isOpen={sidebarOpen} />
+    <div className="fixed top-16 bottom-0 left-0 right-0 w-full">
+      <MapSidebar 
+        ppsData={ppsData} 
+        isOpen={sidebarOpen} 
+        onClose={() => setSidebarOpen(false)}
+        onShelterClick={handleShelterClick} 
+      />
 
       {/* Sidebar toggle button */}
       <button
         onClick={() => setSidebarOpen(!sidebarOpen)}
-        className="absolute top-20 left-4 z-20 bg-white p-2 rounded shadow-lg"
+        className="absolute top-4 left-4 z-20 bg-panel text-foreground p-2 rounded-lg shadow-md border border-border hover:bg-background transition-colors flex items-center justify-center"
+        aria-label="Toggle Sidebar"
       >
-        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
         </svg>
       </button>
 
       {/* Map container */}
-      <div ref={mapContainer} className="w-full h-full" />
-
-      {/* Render markers when map is loaded */}
-      {mapLoaded && map.current && ppsData.map((pps) => (
-        <MapMarker key={pps.id} pps={pps} map={map.current} />
-      ))}
+      <div ref={mapContainer} className="absolute inset-0 w-full h-full" />
+      
+      {/* Render Markers Layer when base map is ready */}
+      {mapLoaded && map.current && (
+        <MapMarkersLayer map={map.current} ppsData={ppsData} />
+      )}
     </div>
   );
 }
