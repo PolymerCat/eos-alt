@@ -70,7 +70,7 @@ export default function MapMarkersLayer({ map, ppsData }: MapMarkersLayerProps) 
           const context = this.context;
 
           context.clearRect(0, 0, this.width, this.height);
-          
+
           // draw outer circle
           context.beginPath();
           context.arc(this.width / 2, this.height / 2, outerRadius, 0, Math.PI * 2);
@@ -108,6 +108,12 @@ export default function MapMarkersLayer({ map, ppsData }: MapMarkersLayerProps) 
           }
         });
       }
+      // if (map.isStyleLoaded()) {
+      //   setupMap();
+      // } else {
+      //   map.once('style.load', setupMap);
+      // }
+
 
       // Create a popup
       const popup = new maplibregl.Popup({
@@ -154,7 +160,7 @@ export default function MapMarkersLayer({ map, ppsData }: MapMarkersLayerProps) 
       const onMouseEnter = (e: any) => {
         if (!e.features || e.features.length === 0) return;
         map.getCanvas().style.cursor = 'pointer';
-        
+
         const coordinates = (e.features[0].geometry as any).coordinates.slice();
         const description = buildPopupHTML(e.features[0].properties);
 
