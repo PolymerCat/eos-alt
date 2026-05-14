@@ -2,6 +2,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import maplibregl from 'maplibre-gl';
 import { PPS } from '@/app/actions';
+import SidebarTest from './sidebar.test';
 
 interface MapProps {
   ppsData: PPS[];
@@ -69,8 +70,10 @@ export default function TestMap({ ppsData }: MapProps) {
 
         return (
             <div className="fixed top-16 bottom-0 left-0 right-0 w-full">
+                
                 {/* Map container */}
                 <div ref={mapContainer} className="absolute inset-0 w-full h-full" />
+                <SidebarTest/>
             </div>
         )
 }
