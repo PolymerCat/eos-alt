@@ -5,15 +5,11 @@ import SidebarTest from "@/components/tests/sidebar.test";
 
 export default async function TestMapPage() {
   const ppsData = await getAlerts();
-  const weatherWarnings = await getWeatherWarnings();
-
 
 
   return (
     <div>
-
       <TestMap ppsData={ppsData} />
-
     </div>
 
   );

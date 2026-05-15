@@ -54,7 +54,7 @@ export async function getAlerts(): Promise<PPS[]> {
             bencana: item.bencana,
             mangsa: String(item.jumlah_mangsa || item.mangsa),
             keluarga: String(item.jumlah_keluarga || item.keluarga),
-            kapasiti: String(item.kapasiti_maksimum || item.kapasiti),
+            kapasiti: String((item.kapasiti_maksimum || item.kapasiti).toFixed(2)) + "%",
         }));
 
         return cleanData;
@@ -79,3 +79,4 @@ export async function getWeatherWarnings(): Promise<WeatherWarning[]> {
         return [];
     }
 }
+

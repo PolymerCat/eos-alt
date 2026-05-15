@@ -23,7 +23,8 @@
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "sonner": "^2.0.7",
-    "tailwind-merge": "^3.6.0"
+    "tailwind-merge": "^3.6.0",
+    "tw-animate": "^1.0.3"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

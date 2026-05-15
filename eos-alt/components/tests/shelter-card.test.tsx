@@ -44,7 +44,7 @@ const capacityLabels: Record<CapacityStatus, string> = {
 
 export default function ShelterCard({ ppsData, selectedShelter, onShelterClick }: CardProps) {
 
-  const status = getCapacityStatus(parseFloat(ppsData.kapasiti.replace("%", "")));
+  const status = getCapacityStatus(parseFloat(ppsData.kapasiti));
   const label = capacityLabels[status];
 
   return (
@@ -55,7 +55,7 @@ export default function ShelterCard({ ppsData, selectedShelter, onShelterClick }
       className={cn(
         "w-full text-left px-4 py-3.5 transition-colors duration-150 border-b border-border",
         "hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset",
-        selectedShelter && "bg-accent"
+        selectedShelter && "bg-[#CBDBF7]"
       )}
     >
       {/* Top row: name + badge */}
