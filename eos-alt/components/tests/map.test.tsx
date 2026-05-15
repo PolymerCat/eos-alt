@@ -6,6 +6,7 @@ import { createRoot } from 'react-dom/client';
 import { PPS } from '@/app/actions';
 import SidebarTest from './sidebar.test';
 import MapPopup from './MapPopup';
+import Marker from './Marker.test';
 import { useGeolocation } from '@/hooks/UserLocation';
 
 
@@ -20,6 +21,7 @@ export default function TestMap({ ppsData }: MapProps) {
   const [mapLoaded, setMapLoaded] = useState(false);
   const [selectedPPS, setSelectedPPS] = useState<PPS | null>(null);
   const markersRef = useRef<{ [id: string]: maplibregl.Marker }>({});
+  const userMarkerRef = useRef<maplibregl.Marker | null>(null);
   const { location, error } = useGeolocation();
 
   // Initialize map on component mount
@@ -80,6 +82,21 @@ export default function TestMap({ ppsData }: MapProps) {
   useEffect(() => {
     if (location && map.current) {
       const { latitude, longitude } = location.coords;
+
+      // Update or create User Location Marker
+      if (!userMarkerRef.current) {
+        const el = document.createElement('div');
+        const root = createRoot(el);
+        root.render(<Marker color="#3b82f6" size={20} pulse={true} />);
+
+        userMarkerRef.current = new maplibregl.Marker({ element: el })
+          .setLngLat([longitude, latitude])
+          .addTo(map.current);
+      } else {
+        userMarkerRef.current.setLngLat([longitude, latitude]);
+      }
+
+      // Optionally fly to user location on first fix
       map.current.flyTo({ center: [longitude, latitude], zoom: 12 });
     }
   }, [location]);
@@ -97,28 +114,24 @@ export default function TestMap({ ppsData }: MapProps) {
       const lat = parseFloat(pps.latti);
       if (isNaN(lng) || isNaN(lat)) return;
 
-      // 1. Create a container element for the React component
+      // 1. Create container for Custom Marker
+      const markerEl = document.createElement('div');
+      const markerRoot = createRoot(markerEl);
+      markerRoot.render(<Marker color="#ef4444" />);
+
+      // 2. Create container for the React Popup
       const popupNode = document.createElement('div');
+      const popupRoot = createRoot(popupNode);
+      popupRoot.render(<MapPopup pps={pps} />);
 
-      // 2. Render the React component into the container
-      // We use a small delay or ensure it's only on the client
-      const root = createRoot(popupNode);
-      root.render(<MapPopup pps={pps} />);
-
-      // 3. Create the MapLibre popup and attach the container
+      // 3. Create the MapLibre popup
       const popup = new maplibregl.Popup({
         offset: 25,
         closeButton: true,
         maxWidth: 'none'
       }).setDOMContent(popupNode);
 
-      // Clean up the React root when the popup is removed to prevent memory leaks
-      popup.on('close', () => {
-        // Optional: you could unmount here if needed, 
-        // though MapLibre usually handles DOM removal.
-      });
-
-      const marker = new maplibregl.Marker({ color: "#ef4444" })
+      const marker = new maplibregl.Marker({ element: markerEl })
         .setLngLat([lng, lat])
         .setPopup(popup)
         .addTo(map.current!);
