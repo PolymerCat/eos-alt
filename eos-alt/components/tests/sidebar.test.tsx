@@ -6,7 +6,7 @@ import ShelterCard from './shelter-card.test';
 
 interface SidebarProps {
   ppsData: PPS[];
-  onPPSSelect: (pps: PPS) => void;
+  onPPSSelect: (pps: PPS, fromSidebar?: boolean) => void;
   selectedPPS: PPS | null;
 }
 
@@ -40,7 +40,7 @@ export default function SidebarTest({ ppsData, onPPSSelect, selectedPPS }: Sideb
                   key={pps.id}
                   ppsData={pps}
                   selectedShelter={selectedPPS?.id === pps.id}
-                  onShelterClick={onPPSSelect}
+                  onShelterClick={(pps) => onPPSSelect(pps, true)}
                 />
               ))}
             </div>

@@ -2,8 +2,10 @@
 import React, { useEffect, useRef, useState } from 'react';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
+import { createRoot } from 'react-dom/client';
 import { PPS } from '@/app/actions';
 import SidebarTest from './sidebar.test';
+import MapPopup from './MapPopup';
 
 interface MapProps {
   ppsData: PPS[];
@@ -83,8 +85,30 @@ export default function TestMap({ ppsData }: MapProps) {
       const lat = parseFloat(pps.latti);
       if (isNaN(lng) || isNaN(lat)) return;
 
+      // 1. Create a container element for the React component
+      const popupNode = document.createElement('div');
+      
+      // 2. Render the React component into the container
+      // We use a small delay or ensure it's only on the client
+      const root = createRoot(popupNode);
+      root.render(<MapPopup pps={pps} />);
+
+      // 3. Create the MapLibre popup and attach the container
+      const popup = new maplibregl.Popup({ 
+        offset: 25, 
+        closeButton: true,
+        maxWidth: 'none'
+      }).setDOMContent(popupNode);
+
+      // Clean up the React root when the popup is removed to prevent memory leaks
+      popup.on('close', () => {
+        // Optional: you could unmount here if needed, 
+        // though MapLibre usually handles DOM removal.
+      });
+
       const marker = new maplibregl.Marker({ color: "#ef4444" })
         .setLngLat([lng, lat])
+        .setPopup(popup)
         .addTo(map.current!);
 
       // Add click listener
@@ -97,7 +121,7 @@ export default function TestMap({ ppsData }: MapProps) {
 
   }, [ppsData, mapLoaded]);
 
-  const handlePPSSelect = (pps: PPS) => {
+  const handlePPSSelect = (pps: PPS, fromSidebar: boolean = false) => {
     setSelectedPPS(pps);
     const lng = parseFloat(pps.longi);
     const lat = parseFloat(pps.latti);
@@ -107,6 +131,13 @@ export default function TestMap({ ppsData }: MapProps) {
         zoom: 12,
         essential: true, // this animation is considered essential with respect to prefers-reduced-motion
       });
+
+      if (fromSidebar) {
+        const marker = markersRef.current[pps.id];
+        if (marker && !marker.getPopup().isOpen()) {
+          marker.togglePopup();
+        }
+      }
     }
   };
 
@@ -119,3 +150,4 @@ export default function TestMap({ ppsData }: MapProps) {
     </div>
   )
 }
+

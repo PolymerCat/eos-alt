@@ -44,11 +44,11 @@ const capacityLabels: Record<CapacityStatus, string> = {
 
 export default function ShelterCard({ ppsData, selectedShelter, onShelterClick }: CardProps) {
 
-    const status = getCapacityStatus(parseFloat(ppsData.kapasiti.replace("%", "")));
-    const label = capacityLabels[status];
+  const status = getCapacityStatus(parseFloat(ppsData.kapasiti.replace("%", "")));
+  const label = capacityLabels[status];
 
-    return (
-        <button
+  return (
+    <button
       onClick={() => onShelterClick(ppsData)}
       aria-pressed={selectedShelter}
       aria-label={`${ppsData.name}, ${ppsData.daerah}, ${ppsData.negeri}. Capacity ${ppsData.kapasiti}. ${label}.`}
@@ -131,5 +131,5 @@ export default function ShelterCard({ ppsData, selectedShelter, onShelterClick }
         </span>
       </div>
     </button>
-    )
+  )
 }

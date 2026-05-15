@@ -8,12 +8,10 @@ export default async function TestMapPage() {
   const weatherWarnings = await getWeatherWarnings();
   return (
     <div>
-      
+
       <TestMap ppsData={ppsData} />
-      {/* <LiveUpdateBar warnings={weatherWarnings} /> */}
-      
+
     </div>
-    
-    
+
   );
 }
