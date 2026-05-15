@@ -6,6 +6,8 @@ import { createRoot } from 'react-dom/client';
 import { PPS } from '@/app/actions';
 import SidebarTest from './sidebar.test';
 import MapPopup from './MapPopup';
+import { useGeolocation } from '@/hooks/UserLocation';
+
 
 interface MapProps {
   ppsData: PPS[];
@@ -18,6 +20,7 @@ export default function TestMap({ ppsData }: MapProps) {
   const [mapLoaded, setMapLoaded] = useState(false);
   const [selectedPPS, setSelectedPPS] = useState<PPS | null>(null);
   const markersRef = useRef<{ [id: string]: maplibregl.Marker }>({});
+  const { location, error } = useGeolocation();
 
   // Initialize map on component mount
   useEffect(() => {
@@ -65,12 +68,21 @@ export default function TestMap({ ppsData }: MapProps) {
       }
     });
 
+
+
     return () => {
       map.current?.remove();
       map.current = null;
     };
 
   }, []); // Run only once
+
+  useEffect(() => {
+    if (location && map.current) {
+      const { latitude, longitude } = location.coords;
+      map.current.flyTo({ center: [longitude, latitude], zoom: 12 });
+    }
+  }, [location]);
 
   // Handle markers when map is loaded or data changes
   useEffect(() => {
@@ -87,15 +99,15 @@ export default function TestMap({ ppsData }: MapProps) {
 
       // 1. Create a container element for the React component
       const popupNode = document.createElement('div');
-      
+
       // 2. Render the React component into the container
       // We use a small delay or ensure it's only on the client
       const root = createRoot(popupNode);
       root.render(<MapPopup pps={pps} />);
 
       // 3. Create the MapLibre popup and attach the container
-      const popup = new maplibregl.Popup({ 
-        offset: 25, 
+      const popup = new maplibregl.Popup({
+        offset: 25,
         closeButton: true,
         maxWidth: 'none'
       }).setDOMContent(popupNode);
@@ -140,6 +152,7 @@ export default function TestMap({ ppsData }: MapProps) {
       }
     }
   };
+
 
   return (
     <div className="fixed top-16 bottom-0 left-0 right-0 w-full">
