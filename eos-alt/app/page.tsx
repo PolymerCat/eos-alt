@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getAlerts, PPS, getWeatherWarnings } from "./actions";
+import { getUserLocations } from "./profile/actions";
 import { createClient } from "@/utils/supabase/server";
 import LiveUpdateBar from "@/components/live-update-bar";
 
@@ -15,7 +16,17 @@ export default async function Home() {
   // Array of user's saved districts
   let savedDistricts: string[] = [];
 
- 
+  if (user) {
+    const locations = await getUserLocations();
+    // Safely extract districts handling cases where relations might return objects or arrays
+    savedDistricts = locations
+      .map(loc => {
+        const d: any = loc.districts;
+        const districtName = Array.isArray(d) ? d[0]?.district : d?.district;
+        return typeof districtName === 'string' ? districtName.toLowerCase().trim() : undefined;
+      })
+      .filter((d): d is string => Boolean(d));
+  }
 
   // If user is not logged in, show all. If logged in, filter by their districts.
   const validAlerts = user

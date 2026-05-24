@@ -1,11 +1,8 @@
 import TestMap from "@/components/tests/map.test";
-import { getAlerts, getWeatherWarnings } from "../actions";
-import LiveUpdateBar from "@/components/live-update-bar";
-import SidebarTest from "@/components/tests/sidebar.test";
+import { getAlerts } from "../actions";
 
 export default async function TestMapPage() {
   const ppsData = await getAlerts();
-
 
   return (
     <div>

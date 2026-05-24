@@ -1,6 +1,6 @@
 "use server";
 
-const BASE = "https://infobencanajkmv2.jkm.gov.my/api/pusat-buka.php?a=0&b=4";
+const BASE = "https://infobencanajkmv2.jkm.gov.my/api/pusat-buka.php?a=0&b=0";
 
 export interface WeatherWarning {
     warning_issue: {
