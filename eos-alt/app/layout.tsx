@@ -44,15 +44,15 @@ export default function RootLayout({
                 <div className="w-8 h-8 rounded-lg bg-accent flex items-center justify-center shadow-sm">
                   <span className="text-accent-foreground font-bold text-lg block leading-none select-none">E</span>
                 </div>
-                <Link href="/" className="font-bold text-lg text-foreground hover:opacity-80 transition-opacity">
+                <Link href="/test-ui" className="font-bold text-lg text-foreground hover:opacity-80 transition-opacity">
                   Emergency <span className="text-accent opacity-90">OS</span>
                 </Link>
               </div>
               <nav className="hidden md:flex space-x-2 font-medium text-sm mr-8">
-                <Link href="/" className="px-4 py-2 text-foreground/80 hover:text-accent hover:bg-foreground/5 rounded-md transition-colors">
+                <Link href="/test-ui" className="px-4 py-2 text-foreground/80 hover:text-accent hover:bg-foreground/5 rounded-md transition-colors">
                   Overview
                 </Link>
-                <Link href="/map" className="px-4 py-2 text-foreground/80 hover:text-accent hover:bg-foreground/5 rounded-md transition-colors">
+                <Link href="/test-map" className="px-4 py-2 text-foreground/80 hover:text-accent hover:bg-foreground/5 rounded-md transition-colors">
                   Map
                 </Link>
               </nav>

@@ -13,10 +13,21 @@ interface SidebarProps {
 export default function SidebarTest({ ppsData, onPPSSelect, selectedPPS }: SidebarProps) {
   const [isOpen, setIsOpen] = useState(true);
 
-  // min-h-screen bg-slate-950 text-slate-100 p-6 z-30 relative
   return (
-    <div className={`absolute z-0 top-0 left-0 z-30 transition-transform duration-300 ${isOpen ? 'translate-x-0' : '-translate-x-full'} w-80 md:w-96 flex flex-col h-full pointer-events-none`}>
-      <div className="max-w-4xl mx-auto space-y-4 p-6 pointer-events-auto w-full h-full flex flex-col">
+    <>
+      {!isOpen && (
+        <button
+          type="button"
+          onClick={() => setIsOpen(true)}
+          className="absolute left-4 top-4 z-40 rounded-full border border-border bg-panel px-4 py-2 text-sm font-medium text-foreground shadow-lg transition hover:bg-background"
+          aria-label="Show shelter list"
+        >
+          Show list
+        </button>
+      )}
+
+      <div className={`absolute top-0 left-0 z-30 transition-transform duration-300 ${isOpen ? 'translate-x-0' : '-translate-x-full'} w-80 md:w-96 flex flex-col h-full pointer-events-none`}>
+        <div className="max-w-4xl mx-auto space-y-4 p-6 pointer-events-auto w-full h-full flex flex-col">
 
         <div className={`overflow-hidden flex flex-col rounded-3xl border border-border bg-panel shadow-2xl transition-all ${isOpen ? 'h-full max-h-[60vh]' : 'h-20'}`}>
           <div className="flex items-center justify-between gap-4 border-b border-border bg-background/90 p-4 shrink-0">
@@ -63,6 +74,7 @@ export default function SidebarTest({ ppsData, onPPSSelect, selectedPPS }: Sideb
         </div>
       </div>
     </div>
+    </>
   );
 }
 
