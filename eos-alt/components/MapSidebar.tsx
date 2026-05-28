@@ -1,5 +1,6 @@
 import React from 'react';
 import { PPS } from '@/app/actions';
+import DataSyncButton from '@/components/DataSyncButton';
 
 interface MapSidebarProps {
   ppsData: PPS[];
@@ -25,6 +26,9 @@ export default function MapSidebar({ ppsData, isOpen, onClose, onShelterClick }:
           </button>
         </div>
         <p className="text-sm text-foreground/60">{ppsData.length} active relief centers</p>
+        <div className="mt-3">
+          <DataSyncButton />
+        </div>
       </div>
       
       <div className="overflow-y-auto flex-grow bg-background/50 backdrop-blur-sm">

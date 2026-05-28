@@ -113,7 +113,7 @@ export const simulationScenarios: EmergencyScenario[] = [
         userId: "simulation-user",
         alertType: "weather",
         isEnabled: true,
-        deliveryMethods: ["App Notification", "whatsapp"],
+        deliveryMethods: ["App Notification", "SMS"],
       },
       {
         id: "pref-sim-002",
@@ -166,7 +166,7 @@ export const simulationScenarios: EmergencyScenario[] = [
         name: "District Operation Room",
         role: "Local emergency coordination",
         phoneNumber: "+6090000001",
-        deliveryMethod: "whatsapp",
+        deliveryMethod: "SMS",
         isPrimary: true,
       },
       {

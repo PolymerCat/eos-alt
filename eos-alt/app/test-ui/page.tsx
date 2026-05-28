@@ -8,6 +8,7 @@ import Card from "@/components/test-ui/Card";
 import { Home, MapPin } from "lucide-react";
 import StatusBadge from "@/components/test-ui/StatusBadge";
 import LiveUpdateBar from "@/components/live-update-bar";
+import DataSyncButton from "@/components/DataSyncButton";
 
 const modules = [
   {
@@ -73,6 +74,19 @@ export default async function TestUiHubPage({
         <StatCard label="Notifications" value={data.notifications.length} detail="Generated user alert records" />
         <StatCard label="SOS" value={data.sosRequests.length} detail="Emergency request records" />
       </div>
+
+      {/* Manual sync button — only in live mode */}
+      {isLive && (
+        <div className="flex items-center justify-between rounded-lg border border-border bg-panel px-4 py-3">
+          <div>
+            <p className="text-sm font-semibold text-foreground">Live Data Sync</p>
+            <p className="text-xs text-foreground/50 mt-0.5">
+              Shelter and weather data is synced automatically every 10 min. Trigger manually if needed.
+            </p>
+          </div>
+          <DataSyncButton />
+        </div>
+      )}
 
 
       <PageSection title="" description="">
