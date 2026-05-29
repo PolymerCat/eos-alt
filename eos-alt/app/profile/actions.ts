@@ -97,24 +97,218 @@ export async function getUserLocations() {
   return data;
 }
 
+function getDistanceKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371; // Earth's radius in km
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
+async function checkEmergenciesAndAlertsForLocation(
+  userId: string,
+  stateId: number,
+  districtId: number,
+  lat: number,
+  lng: number
+) {
+  const supabase = await createClient();
+
+  // 1. Fetch State Name
+  const { data: stateData } = await supabase
+    .from("states")
+    .select("state_name")
+    .eq("code", stateId)
+    .single();
+
+  // 2. Fetch District Name
+  const { data: districtData } = await supabase
+    .from("districts")
+    .select("district")
+    .eq("id", districtId)
+    .single();
+
+  const stateName = stateData?.state_name ?? "";
+  const districtName = districtData?.district ?? "";
+
+  // 3. Fetch active JKM shelter snapshots
+  const { data: activeSnapshots, error: snapshotError } = await supabase
+    .from("shelter_snapshots")
+    .select(`
+      shelter_id,
+      capacity,
+      victims,
+      families,
+      shelters (
+        id, name, latitude, longitude,
+        state, district, mukim, disaster_type
+      )
+    `)
+    .eq("status", "active");
+
+  if (snapshotError) {
+    console.error("Error fetching active snapshots for check:", snapshotError);
+  }
+
+  // Deduplicate shelters in-memory
+  const seenShelterIds = new Set<string>();
+  const activeShelters = [];
+  if (activeSnapshots) {
+    for (const row of activeSnapshots as any[]) {
+      if (seenShelterIds.has(row.shelter_id)) continue;
+      seenShelterIds.add(row.shelter_id);
+
+      const s = Array.isArray(row.shelters) ? row.shelters[0] : row.shelters;
+      if (s) {
+        activeShelters.push({
+          id: s.id,
+          name: s.name,
+          latitude: Number(s.latitude),
+          longitude: Number(s.longitude),
+          state: s.state,
+          district: s.district,
+          mukim: s.mukim,
+          disaster_type: s.disaster_type,
+          victims: row.victims ?? "0",
+          families: row.families ?? "0",
+          capacity: row.capacity ?? "0.00%",
+        });
+      }
+    }
+  }
+
+  // Look for matching/nearby shelters
+  const matchingShelters = [];
+  for (const shelter of activeShelters) {
+    const distance = getDistanceKm(lat, lng, shelter.latitude, shelter.longitude);
+    const sameDistrict =
+      districtName &&
+      shelter.district &&
+      districtName.trim().toLowerCase() === shelter.district.trim().toLowerCase();
+    const sameState =
+      stateName &&
+      shelter.state &&
+      stateName.trim().toLowerCase() === shelter.state.trim().toLowerCase();
+
+    if (distance <= 15 || (sameDistrict && sameState)) {
+      matchingShelters.push({
+        ...shelter,
+        distance,
+        matchReason:
+          distance <= 15
+            ? `within ${distance.toFixed(1)} km of your saved coordinates`
+            : `located in the same district (${districtName})`,
+      });
+    }
+  }
+
+  // 4. Fetch active weather alerts
+  const { data: activeAlerts, error: alertError } = await supabase
+    .from("weather_alerts")
+    .select("id, source, title, description, severity, affected_area, state, valid_from, valid_to")
+    .or("valid_to.is.null,valid_to.gte." + new Date().toISOString());
+
+  if (alertError) {
+    console.error("Error fetching active weather alerts for check:", alertError);
+  }
+
+  const matchingAlerts = [];
+  if (activeAlerts) {
+    for (const alert of activeAlerts) {
+      const sameState =
+        stateName &&
+        alert.state &&
+        (alert.state.trim().toLowerCase().includes(stateName.trim().toLowerCase()) ||
+          stateName.trim().toLowerCase().includes(alert.state.trim().toLowerCase()));
+
+      const districtMentioned =
+        districtName &&
+        ((alert.affected_area &&
+          alert.affected_area.trim().toLowerCase().includes(districtName.trim().toLowerCase())) ||
+          (alert.description &&
+            alert.description.trim().toLowerCase().includes(districtName.trim().toLowerCase())));
+
+      if (sameState || districtMentioned) {
+        matchingAlerts.push({
+          ...alert,
+          matchReason: districtMentioned
+            ? `mentions your district (${districtName})`
+            : `issued for your state (${stateName})`,
+        });
+      }
+    }
+  }
+
+  // 5. Build notifications to insert
+  const notificationsToInsert = [];
+
+  for (const shelter of matchingShelters) {
+    notificationsToInsert.push({
+      user_id: userId,
+      title: `🚨 Emergency Shelter Opened Nearby`,
+      message: `The temporary shelter (PPS) "${shelter.name}" is active ${shelter.matchReason}. Current occupancy: ${shelter.victims} victims (${shelter.families} families).`,
+      delivery_method: "in_app",
+      status: "sent",
+      sent_at: new Date().toISOString(),
+    });
+  }
+
+  for (const alert of matchingAlerts) {
+    notificationsToInsert.push({
+      user_id: userId,
+      weather_alert_id: alert.id,
+      title: `⚠️ Weather Alert in Your Area`,
+      message: `A weather alert (${alert.severity}) has been detected ${alert.matchReason}: "${alert.title}". Details: ${alert.description || "No further details available."}`,
+      delivery_method: "in_app",
+      status: "sent",
+      sent_at: new Date().toISOString(),
+    });
+  }
+
+  // 6. Write to notifications table
+  if (notificationsToInsert.length > 0) {
+    const { error: insertError } = await supabase
+      .from("notifications")
+      .insert(notificationsToInsert);
+
+    if (insertError) {
+      console.error("Error creating notifications for saved location:", insertError);
+    }
+  }
+}
+
 export async function saveLocation(state: number, district: number, lat: number, lng: number) {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   if (!user) throw new Error("Unauthorized");
 
-  const { error } = await supabase
-    .from("user_locations")
-    .insert({
-      user_id: user.id,
-      state,
-      district,
-      latitude: lat,
-      longitude: lng
-    });
+  const { error } = await supabase.from("user_locations").insert({
+    user_id: user.id,
+    state,
+    district,
+    latitude: lat,
+    longitude: lng,
+  });
 
   if (error) {
     console.error("Error saving location:", error);
     throw new Error("Failed to save location");
+  }
+
+  // Trigger immediate check for matching emergencies & alerts
+  try {
+    await checkEmergenciesAndAlertsForLocation(user.id, state, district, lat, lng);
+  } catch (checkErr) {
+    console.error("Error checking emergencies during saveLocation:", checkErr);
+    // Do not throw or block the main location save if notification generation fails
   }
 
   revalidatePath("/profile");
