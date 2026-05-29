@@ -38,7 +38,16 @@ type ShelterSnapshotRow = {
     district: string;
     mukim: string | null;
     disaster_type: string | null;
-  } | null;
+  } | {
+    id: string;
+    name: string;
+    latitude: number;
+    longitude: number;
+    state: string;
+    district: string;
+    mukim: string | null;
+    disaster_type: string | null;
+  }[] | null;
 };
 
 type WeatherAlertRow = {
@@ -118,7 +127,7 @@ function mapUserLocations(rows: JoinedUserLocation[]): SavedLocation[] {
 }
 
 function mapSnapshotToShelter(row: ShelterSnapshotRow): PPS | null {
-  const s = row.shelters;
+  const s = Array.isArray(row.shelters) ? row.shelters[0] : row.shelters;
   if (!s) return null;
   return {
     id: s.id,
