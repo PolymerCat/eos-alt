@@ -1,8 +1,9 @@
 import Link from "next/link";
-import { getAlerts, PPS, getWeatherWarnings } from "./actions";
+import { getAlerts, getWeatherForecasts, getWeatherWarnings } from "./actions";
 import { getUserLocations } from "./profile/actions";
 import { createClient } from "@/utils/supabase/server";
 import LiveUpdateBar from "@/components/live-update-bar";
+import WeatherForecastWidget, { WeatherForecastLocation } from "@/components/weather-forecast-widget";
 
 export default async function Home() {
   const supabase = await createClient();
@@ -10,18 +11,23 @@ export default async function Home() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const alerts: PPS[] = await getAlerts();
-  const weatherWarnings = await getWeatherWarnings();
+  const [alerts, weatherWarnings, weatherForecasts] = await Promise.all([
+    getAlerts(),
+    getWeatherWarnings(),
+    getWeatherForecasts(),
+  ]);
 
   // Array of user's saved districts
   let savedDistricts: string[] = [];
+  let savedLocations: WeatherForecastLocation[] = [];
 
   if (user) {
     const locations = await getUserLocations();
+    savedLocations = locations as WeatherForecastLocation[];
     // Safely extract districts handling cases where relations might return objects or arrays
     savedDistricts = locations
       .map(loc => {
-        const d: any = loc.districts;
+        const d = loc.districts as { district?: string } | { district?: string }[] | null;
         const districtName = Array.isArray(d) ? d[0]?.district : d?.district;
         return typeof districtName === 'string' ? districtName.toLowerCase().trim() : undefined;
       })
@@ -109,28 +115,36 @@ export default async function Home() {
           </div>
 
           {/* User Status / Quick Actions */}
-          <div className="bg-panel border border-border p-6 rounded-xl shadow-sm flex flex-col gap-4">
-            <h2 className="text-lg font-bold text-foreground/90 border-b border-border pb-2">
-              User Account
-            </h2>
-            <div className="flex-grow flex flex-col items-center justify-center text-center p-4 bg-background border border-border/50 rounded-lg">
-              {!user ? (
-                <>
-                  <p className="text-foreground/50 text-sm mb-4">You are not signed in.</p>
-                  <Link href="/login" className="w-full bg-accent text-accent-foreground font-medium rounded-md py-2 px-4 text-sm hover:bg-accent/90 transition-all text-center block">
-                    Sign In
-                  </Link>
-                </>
-              ) : (
-                <>
-                  <p className="text-foreground/90 font-medium text-sm mb-1">Signed In</p>
-                  <p className="text-accent text-xs mb-4 truncate w-full">{user.email}</p>
-                  <Link href="/map" className="w-full bg-foreground text-background font-medium rounded-md py-2 px-4 text-sm hover:bg-foreground/90 transition-all text-center block border border-foreground">
-                    View Map
-                  </Link>
-                </>
-              )}
+          <div className="flex flex-col gap-6">
+            <div className="bg-panel border border-border p-6 rounded-xl shadow-sm flex flex-col gap-4">
+              <h2 className="text-lg font-bold text-foreground/90 border-b border-border pb-2">
+                User Account
+              </h2>
+              <div className="flex-grow flex flex-col items-center justify-center text-center p-4 bg-background border border-border/50 rounded-lg">
+                {!user ? (
+                  <>
+                    <p className="text-foreground/50 text-sm mb-4">You are not signed in.</p>
+                    <Link href="/login" className="w-full bg-accent text-accent-foreground font-medium rounded-md py-2 px-4 text-sm hover:bg-accent/90 transition-all text-center block">
+                      Sign In
+                    </Link>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-foreground/90 font-medium text-sm mb-1">Signed In</p>
+                    <p className="text-accent text-xs mb-4 truncate w-full">{user.email}</p>
+                    <Link href="/map" className="w-full bg-foreground text-background font-medium rounded-md py-2 px-4 text-sm hover:bg-foreground/90 transition-all text-center block border border-foreground">
+                      View Map
+                    </Link>
+                  </>
+                )}
+              </div>
             </div>
+
+            <WeatherForecastWidget
+              forecasts={weatherForecasts}
+              locations={savedLocations}
+              maxItems={3}
+            />
           </div>
         </div>
       </div>

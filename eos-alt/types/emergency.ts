@@ -4,7 +4,7 @@ export type DataMode = "live" | "simulation";
 
 export type AlertSeverity = "advisory" | "watch" | "warning" | "critical";
 
-export type DeliveryMethod = "in_app" | "whatsapp" | "sms" | "email";
+export type DeliveryMethod = "App Notification" | "SMS" | "Email";
 
 export type DeliveryStatus = "pending" | "sent" | "failed" | "skipped";
 

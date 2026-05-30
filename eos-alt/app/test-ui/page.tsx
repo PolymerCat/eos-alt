@@ -1,37 +1,22 @@
 import Link from "next/link";
 import { getEmergencyData, normalizeDataMode } from "@/data/providers/emergency-data-provider";
-import { getWeatherWarnings } from "../actions";
+import { getWeatherForecasts, getWeatherWarnings } from "../actions";
+import type { SavedLocation } from "@/types/emergency";
 import PageSection from "@/components/test-ui/PageSection";
 import StatCard from "@/components/test-ui/StatCard";
 import TestUiShell from "@/components/test-ui/TestUiShell";
 import Card from "@/components/test-ui/Card";
 import { Home, MapPin } from "lucide-react";
-import StatusBadge from "@/components/test-ui/StatusBadge";
 import LiveUpdateBar from "@/components/live-update-bar";
 import DataSyncButton from "@/components/DataSyncButton";
+import WeatherForecastWidget, { WeatherForecastLocation } from "@/components/weather-forecast-widget";
 
-const modules = [
-  {
-    href: "/test-ui/weather",
-    title: "Weather Alerts",
-    body: "METMalaysia-style warnings, severity display, and forecast summary components.",
-  },
-  {
-    href: "/test-ui/alerts",
-    title: "Personalized Alerts",
-    body: "Saved-location matching, alert preferences, government notices, and notification history.",
-  },
-  {
-    href: "/test-ui/sos",
-    title: "SOS Alert",
-    body: "Location capture, emergency contact selection, confirmation, and request status.",
-  },
-  {
-    href: "/test-ui/reports",
-    title: "Reports",
-    body: "Generate and preview shareable situation summaries from the same emergency data snapshot.",
-  },
-];
+function toWeatherForecastLocations(savedLocations: SavedLocation[]): WeatherForecastLocation[] {
+  return savedLocations.map((location) => ({
+    states: { state_name: location.stateName },
+    districts: { district: location.districtName },
+  }));
+}
 
 export default async function TestUiHubPage({
   searchParams,
@@ -40,8 +25,12 @@ export default async function TestUiHubPage({
 }) {
   const params = await searchParams;
   const mode = normalizeDataMode(params.mode);
-  const data = await getEmergencyData({ mode });
-  const weatherWarnings = await getWeatherWarnings();
+  const [data, weatherWarnings, weatherForecasts] = await Promise.all([
+    getEmergencyData({ mode }),
+    getWeatherWarnings(),
+    getWeatherForecasts(),
+  ]);
+  const forecastLocations = toWeatherForecastLocations(data.savedLocations);
 
   const isLive = mode === "live";
   const displayAlerts = isLive
@@ -146,11 +135,18 @@ export default async function TestUiHubPage({
             </div>
           </div>
 
-          <div className="lg:col-span-1 h-full">
+          <div className="lg:col-span-1 h-full flex flex-col gap-4">
+            <WeatherForecastWidget
+              forecasts={weatherForecasts}
+              locations={forecastLocations}
+              maxItems={2}
+              className="shrink-0"
+            />
+
             <Card
               title="Weather Alerts"
               description="Weather warnings and alerts from MET Malaysia"
-              className="h-full flex flex-col"
+              className="flex-1 min-h-0 flex flex-col"
             >
               <div className="flex flex-col gap-2.5 mt-2 overflow-hidden flex-1">
                 {displayAlerts.slice(0, 4).map((alert) => (

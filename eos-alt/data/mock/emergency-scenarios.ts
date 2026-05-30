@@ -113,14 +113,14 @@ export const simulationScenarios: EmergencyScenario[] = [
         userId: "simulation-user",
         alertType: "weather",
         isEnabled: true,
-        deliveryMethods: ["in_app", "sms"],
+        deliveryMethods: ["App Notification", "SMS"],
       },
       {
         id: "pref-sim-002",
         userId: "simulation-user",
         alertType: "shelter",
         isEnabled: true,
-        deliveryMethods: ["in_app"],
+        deliveryMethods: ["App Notification"],
       },
     ],
     notifications: [
@@ -131,7 +131,7 @@ export const simulationScenarios: EmergencyScenario[] = [
         title: "Critical rain warning near Family Home",
         message:
           "Tumpat is inside the affected area. Review nearest shelter options and keep emergency contacts ready.",
-        deliveryMethod: "in_app",
+        deliveryMethod: "App Notification",
         status: "sent",
         createdAt: now,
       },
@@ -142,7 +142,7 @@ export const simulationScenarios: EmergencyScenario[] = [
         title: "Critical rain warning near Abah's House",
         message:
           "Kota Bharu is inside the affected area. Review nearest shelter options and keep emergency contacts ready.",
-        deliveryMethod: "in_app",
+        deliveryMethod: "App Notification",
         status: "pending",
         createdAt: now,
       },
@@ -166,7 +166,7 @@ export const simulationScenarios: EmergencyScenario[] = [
         name: "District Operation Room",
         role: "Local emergency coordination",
         phoneNumber: "+6090000001",
-        deliveryMethod: "sms",
+        deliveryMethod: "SMS",
         isPrimary: true,
       },
       {
@@ -174,7 +174,7 @@ export const simulationScenarios: EmergencyScenario[] = [
         name: "Family Contact",
         role: "Personal emergency contact",
         phoneNumber: "+60120000001",
-        deliveryMethod: "sms",
+        deliveryMethod: "SMS",
         isPrimary: false,
       },
     ],
