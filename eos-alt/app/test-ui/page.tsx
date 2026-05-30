@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { getEmergencyData, normalizeDataMode } from "@/data/providers/emergency-data-provider";
-import { getWeatherForecasts, getWeatherWarnings } from "../actions";
 import type { SavedLocation } from "@/types/emergency";
 import PageSection from "@/components/test-ui/PageSection";
 import StatCard from "@/components/test-ui/StatCard";
@@ -25,23 +24,11 @@ export default async function TestUiHubPage({
 }) {
   const params = await searchParams;
   const mode = normalizeDataMode(params.mode);
-  const [data, weatherWarnings, weatherForecasts] = await Promise.all([
-    getEmergencyData({ mode }),
-    getWeatherWarnings(),
-    getWeatherForecasts(),
-  ]);
+  const data = await getEmergencyData({ mode });
   const forecastLocations = toWeatherForecastLocations(data.savedLocations);
 
   const isLive = mode === "live";
-  const displayAlerts = isLive
-    ? weatherWarnings.map((w, index) => ({
-      id: `live-warning-${index}`,
-      title: w.warning_issue?.title_en || w.heading_en || "Weather Alert",
-      description: w.text_en || w.text_bm || "",
-      severity: "warning" as const,
-      affectedArea: w.warning_issue?.title_en || "Malaysia",
-    }))
-    : data.weatherAlerts;
+  const displayAlerts = data.weatherAlerts;
 
   const getDotColor = (severity: string) => {
     if (severity === "critical") return "bg-red-500";
@@ -59,7 +46,7 @@ export default async function TestUiHubPage({
     >
       <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
         <StatCard label="Shelters" value={data.shelters.length} detail="Active or simulated PPS records" />
-        <StatCard label="Weather" value={data.weatherWarnings.length + data.weatherAlerts.length} detail="Warning records available" />
+        <StatCard label="Weather" value={data.weatherAlerts.length} detail="Warning records available" />
         <StatCard label="Notifications" value={data.notifications.length} detail="Generated user alert records" />
         <StatCard label="SOS" value={data.sosRequests.length} detail="Emergency request records" />
       </div>
@@ -137,7 +124,7 @@ export default async function TestUiHubPage({
 
           <div className="lg:col-span-1 h-full flex flex-col gap-4">
             <WeatherForecastWidget
-              forecasts={weatherForecasts}
+              forecasts={data.weatherForecasts}
               locations={forecastLocations}
               maxItems={2}
               className="shrink-0"
@@ -227,7 +214,7 @@ export default async function TestUiHubPage({
       {/* #endregion */}
 
 
-      <div className="pt-4"><LiveUpdateBar warnings={weatherWarnings} /></div>
+      <div className="pt-4"><LiveUpdateBar alerts={data.weatherAlerts} /></div>
 
     </TestUiShell>
   );

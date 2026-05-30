@@ -42,18 +42,6 @@ export default async function TestUiWeatherPage({
         </div>
       </PageSection>
 
-      <PageSection title="Raw Weather Warning Feed">
-        <div className="flex flex-col gap-3">
-          {data.weatherWarnings.map((warning, index) => (
-            <article key={`${warning.valid_from}-${index}`} className="rounded-lg border border-border bg-panel p-4">
-              <h3 className="font-semibold text-foreground">
-                {warning.warning_issue?.title_en ?? warning.heading_en}
-              </h3>
-              <p className="mt-2 text-sm leading-6 text-foreground/65">{warning.text_en || warning.text_bm}</p>
-            </article>
-          ))}
-        </div>
-      </PageSection>
     </TestUiShell>
   );
 }

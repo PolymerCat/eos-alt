@@ -49,20 +49,24 @@ export const simulationScenarios: EmergencyScenario[] = [
         kapasiti: "46.00%",
       },
     ],
-    weatherWarnings: [
+    weatherForecasts: [
       {
-        warning_issue: {
-          title_bm: "Amaran Hujan Berterusan Bahaya",
-          title_en: "Danger Continuous Rain Warning",
-        },
-        valid_from: "2026-05-24T08:00:00+08:00",
-        valid_to: "2026-05-25T18:00:00+08:00",
-        text_bm:
-          "Hujan sangat lebat berterusan dijangka berlaku di Kelantan melibatkan Tumpat, Pasir Mas dan Kota Bharu.",
-        text_en:
-          "Continuous very heavy rain is expected in Kelantan involving Tumpat, Pasir Mas and Kota Bharu.",
-        heading_bm: "Amaran Cuaca",
-        heading_en: "Weather Warning",
+        code: "KLT-01",
+        station: "Pasir Mas",
+        timestamp: "12:00 PM",
+        temp: "26°C",
+        state: "Kelantan",
+        rainfall: { "12:00 PM": "hujan_lebat", "03:00 PM": "hujan_lebat" },
+        icon: "hujan_lebat",
+      },
+      {
+        code: "KLT-02",
+        station: "Kota Bharu",
+        timestamp: "12:00 PM",
+        temp: "27°C",
+        state: "Kelantan",
+        rainfall: { "12:00 PM": "hujan", "03:00 PM": "ribut_petir" },
+        icon: "ribut_petir",
       },
     ],
     weatherAlerts: [
@@ -70,8 +74,11 @@ export const simulationScenarios: EmergencyScenario[] = [
         id: "wa-sim-001",
         source: "METMalaysia",
         title: "Continuous Heavy Rain Warning",
+        titleBm: "Amaran Hujan Berterusan Bahaya",
         description:
           "High-risk rainfall pattern detected for selected districts in Kelantan.",
+        descriptionBm:
+          "Corak hujan berisiko tinggi dikesan untuk daerah terpilih di Kelantan.",
         severity: "critical",
         affectedArea: "Tumpat, Pasir Mas, Kota Bharu",
         issuedAt: now,
@@ -82,8 +89,11 @@ export const simulationScenarios: EmergencyScenario[] = [
         id: "wa-sim-002",
         source: "METMalaysia",
         title: "Intense Heat",
+        titleBm: "Panas Melampau",
         description:
           "High intenisity heat signature detected for selected districts in Pulau Pinang.",
+        descriptionBm:
+          "Gelombang haba berintensiti tinggi dikesan untuk daerah terpilih di Pulau Pinang.",
         severity: "critical",
         affectedArea: "Tasek Gelugor, Kepala Batas, Seberang Perai Utara",
         issuedAt: now,

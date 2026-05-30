@@ -25,7 +25,7 @@ export default async function TestUiMapPage({
         <aside className="flex flex-col gap-3">
           <div className="grid grid-cols-2 gap-3">
             <StatCard label="Shelters" value={data.shelters.length} detail="Open records" />
-            <StatCard label="Warnings" value={data.weatherWarnings.length} detail="Weather feed" />
+            <StatCard label="Warnings" value={data.weatherAlerts.length} detail="Weather feed" />
           </div>
           <PageSection title="Shelter List" description="Google Maps-style left panel.">
             <div className="flex max-h-[620px] flex-col gap-3 overflow-y-auto pr-1">

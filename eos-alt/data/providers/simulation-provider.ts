@@ -11,7 +11,7 @@ export async function getSimulationEmergencyData(
     mode: "simulation",
     scenarioName: scenario.name,
     shelters: scenario.shelters,
-    weatherWarnings: scenario.weatherWarnings,
+    weatherForecasts: scenario.weatherForecasts,
     weatherAlerts: scenario.weatherAlerts,
     savedLocations: scenario.savedLocations,
     alertPreferences: scenario.alertPreferences,

@@ -1,4 +1,4 @@
-import type { PPS, WeatherWarning } from "@/app/actions";
+import type { PPS, WeatherWarning, WeatherForecast } from "@/app/actions";
 
 export type DataMode = "live" | "simulation";
 
@@ -28,7 +28,9 @@ export interface WeatherAlert {
   id: string;
   source: "METMalaysia" | "NADMA" | "simulation";
   title: string;
+  titleBm?: string;
   description: string;
+  descriptionBm?: string;
   severity: AlertSeverity;
   affectedArea: string;
   issuedAt: string;
@@ -109,7 +111,7 @@ export interface EmergencyScenario {
   name: string;
   description: string;
   shelters: PPS[];
-  weatherWarnings: WeatherWarning[];
+  weatherForecasts: WeatherForecast[];
   weatherAlerts: WeatherAlert[];
   savedLocations: SavedLocation[];
   alertPreferences: AlertPreference[];
@@ -125,7 +127,7 @@ export interface EmergencyDataSnapshot {
   mode: DataMode;
   scenarioName?: string;
   shelters: PPS[];
-  weatherWarnings: WeatherWarning[];
+  weatherForecasts: WeatherForecast[];
   weatherAlerts: WeatherAlert[];
   savedLocations: SavedLocation[];
   alertPreferences: AlertPreference[];

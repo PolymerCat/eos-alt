@@ -1,17 +1,17 @@
 "use client";
 
 import React from "react";
-import { WeatherWarning } from "@/app/actions";
+import { WeatherAlert } from "@/types/emergency";
 
-export default function LiveUpdateBar({ warnings }: { warnings: WeatherWarning[] }) {
-  if (!warnings || warnings.length === 0) return null;
+export default function LiveUpdateBar({ alerts }: { alerts: WeatherAlert[] }) {
+  if (!alerts || alerts.length === 0) return null;
 
   const renderItems = () => (
-    warnings.map((w, i) => (
+    alerts.map((w, i) => (
       <span key={i} className="mx-6 inline-flex items-center">
         <span className="w-1.5 h-1.5 bg-red-600 rounded-full mr-3 animate-pulse"></span>
-        <span className="font-bold mr-2">{w.warning_issue?.title_bm || w.heading_bm}:</span>
-        <span>{w.text_bm}</span>
+        <span className="font-bold mr-2">{w.titleBm || w.title}:</span>
+        <span>{w.descriptionBm || w.description}</span>
       </span>
     ))
   );

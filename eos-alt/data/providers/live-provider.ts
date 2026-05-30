@@ -1,5 +1,5 @@
 import { createClient } from "@/utils/supabase/server";
-import { getWeatherWarnings } from "@/app/actions";
+import { getWeatherForecasts } from "@/app/actions";
 import { getUserLocations } from "@/app/profile/actions";
 import type {
   AlertPreference,
@@ -54,7 +54,9 @@ type WeatherAlertRow = {
   id: string;
   source: string;
   title: string;
+  title_bm: string | null;
   description: string | null;
+  description_bm: string | null;
   severity: string | null;
   affected_area: string | null;
   valid_from: string | null;
@@ -149,7 +151,9 @@ function mapWeatherAlert(row: WeatherAlertRow): WeatherAlert {
     id: row.id,
     source: (row.source as WeatherAlert["source"]) ?? "METMalaysia",
     title: row.title,
+    titleBm: row.title_bm ?? undefined,
     description: row.description ?? "",
+    descriptionBm: row.description_bm ?? undefined,
     severity: (row.severity as WeatherAlert["severity"]) ?? "advisory",
     affectedArea: row.affected_area ?? "",
     issuedAt: row.issued_at,
@@ -216,7 +220,7 @@ export async function getLiveEmergencyData(): Promise<EmergencyDataSnapshot> {
   const [
     snapshotResult,
     weatherAlertResult,
-    weatherWarnings,
+    weatherForecasts,
     userLocations,
     alertPrefResult,
     notificationResult,
@@ -243,13 +247,13 @@ export async function getLiveEmergencyData(): Promise<EmergencyDataSnapshot> {
     // Active weather alerts (not yet expired)
     supabase
       .from("weather_alerts")
-      .select("id, source, title, description, severity, affected_area, valid_from, valid_to, issued_at")
+      .select("id, source, title, title_bm, description, description_bm, severity, affected_area, valid_from, valid_to, issued_at")
       .or("valid_to.is.null,valid_to.gte." + new Date().toISOString())
       .order("issued_at", { ascending: false })
       .limit(50),
 
-    // Weather warnings from live API (still needed for the warning ticker)
-    getWeatherWarnings(),
+    // Weather forecasts from live API
+    getWeatherForecasts(),
 
     // User locations (Supabase)
     user ? (getUserLocations() as Promise<JoinedUserLocation[]>) : Promise.resolve([] as JoinedUserLocation[]),
@@ -325,7 +329,7 @@ export async function getLiveEmergencyData(): Promise<EmergencyDataSnapshot> {
   return {
     mode: "live",
     shelters,
-    weatherWarnings,
+    weatherForecasts,
     weatherAlerts,
     savedLocations,
     alertPreferences,

@@ -1,9 +1,16 @@
 import Link from "next/link";
-import { getAlerts, getWeatherForecasts, getWeatherWarnings } from "./actions";
-import { getUserLocations } from "./profile/actions";
+import { getEmergencyData } from "@/data/providers/emergency-data-provider";
+import type { SavedLocation } from "@/types/emergency";
 import { createClient } from "@/utils/supabase/server";
 import LiveUpdateBar from "@/components/live-update-bar";
 import WeatherForecastWidget, { WeatherForecastLocation } from "@/components/weather-forecast-widget";
+
+function toWeatherForecastLocations(savedLocations: SavedLocation[]): WeatherForecastLocation[] {
+  return savedLocations.map((location) => ({
+    states: { state_name: location.stateName },
+    districts: { district: location.districtName },
+  }));
+}
 
 export default async function Home() {
   const supabase = await createClient();
@@ -11,33 +18,18 @@ export default async function Home() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const [alerts, weatherWarnings, weatherForecasts] = await Promise.all([
-    getAlerts(),
-    getWeatherWarnings(),
-    getWeatherForecasts(),
-  ]);
+  const data = await getEmergencyData({ mode: "live" });
 
-  // Array of user's saved districts
-  let savedDistricts: string[] = [];
-  let savedLocations: WeatherForecastLocation[] = [];
+  const savedDistricts = data.savedLocations
+    .map((loc) => loc.districtName.toLowerCase().trim())
+    .filter(Boolean);
 
-  if (user) {
-    const locations = await getUserLocations();
-    savedLocations = locations as WeatherForecastLocation[];
-    // Safely extract districts handling cases where relations might return objects or arrays
-    savedDistricts = locations
-      .map(loc => {
-        const d = loc.districts as { district?: string } | { district?: string }[] | null;
-        const districtName = Array.isArray(d) ? d[0]?.district : d?.district;
-        return typeof districtName === 'string' ? districtName.toLowerCase().trim() : undefined;
-      })
-      .filter((d): d is string => Boolean(d));
-  }
+  const forecastLocations = toWeatherForecastLocations(data.savedLocations);
 
   // If user is not logged in, show all. If logged in, filter by their districts.
   const validAlerts = user
-    ? alerts.filter(center => savedDistricts.includes(center.daerah.toLowerCase().trim()))
-    : alerts;
+    ? data.shelters.filter((center) => savedDistricts.includes(center.daerah.toLowerCase().trim()))
+    : data.shelters;
 
   return (
     <>
@@ -141,15 +133,14 @@ export default async function Home() {
             </div>
 
             <WeatherForecastWidget
-              forecasts={weatherForecasts}
-              locations={savedLocations}
+              forecasts={data.weatherForecasts}
+              locations={forecastLocations}
               maxItems={3}
             />
           </div>
         </div>
       </div>
-      <LiveUpdateBar warnings={weatherWarnings} />
+      <LiveUpdateBar alerts={data.weatherAlerts} />
     </>
   );
 }
-
