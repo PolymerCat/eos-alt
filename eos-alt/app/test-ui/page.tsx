@@ -77,7 +77,7 @@ export default async function TestUiHubPage({
                 className="h-full flex flex-col"
               >
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-2 flex-1 content-start overflow-hidden">
-                  {data.notifications.slice(0, 4).map((notification) => (
+                  {data.notifications.slice(0, 6).map((notification) => (
                     <div key={notification.id} className="rounded-lg border border-border bg-panel/30 p-3 flex flex-col justify-between hover:border-accent/40 transition-colors">
                       <div>
                         <h4 className="font-semibold text-xs text-foreground line-clamp-1">{notification.title}</h4>

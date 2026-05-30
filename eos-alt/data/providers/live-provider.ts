@@ -18,6 +18,8 @@ type JoinedUserLocation = {
   id: number;
   latitude: number;
   longitude: number;
+  state?: number | null;
+  district?: number | null;
   label?: string | null;
   description?: string | null;
   states?: { state_name?: string } | Array<{ state_name?: string }> | null;

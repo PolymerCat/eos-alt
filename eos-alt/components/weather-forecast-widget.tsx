@@ -137,8 +137,14 @@ export default function WeatherForecastWidget({
   variant = "card",
   className = "",
 }: WeatherForecastWidgetProps) {
-  const matchedForecasts = getMatchedForecasts(forecasts, locations).slice(0, maxItems);
+  const allMatched = getMatchedForecasts(forecasts, locations);
+  const matchedForecasts = allMatched.slice(0, 10);
+  const isScrollable = allMatched.length > maxItems;
   const isOverlay = variant === "overlay";
+
+  const containerStyle = isScrollable
+    ? { maxHeight: `${maxItems * 126 + (maxItems - 1) * 12}px` }
+    : undefined;
 
   return (
     <section
@@ -149,6 +155,22 @@ export default function WeatherForecastWidget({
         className,
       ].join(" ")}
     >
+      <style dangerouslySetInnerHTML={{ __html: `
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 4px !important;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: transparent !important;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: rgba(156, 163, 175, 0.35) !important;
+          border-radius: 2px !important;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: rgba(156, 163, 175, 0.55) !important;
+        }
+      `}} />
+
       <div className="border-b border-border pb-3">
         <h2 className="text-lg font-bold text-foreground/90">Weather Forecast</h2>
         <p className="text-xs text-foreground/50 mt-1">
@@ -165,11 +187,17 @@ export default function WeatherForecastWidget({
           No MET Malaysia station forecast matched your saved locations.
         </div>
       ) : (
-        <div className="mt-4 flex flex-col gap-3">
+        <div
+          className={[
+            "mt-4 flex flex-col gap-3 min-h-0 custom-scrollbar",
+            isScrollable ? "overflow-y-auto pr-1.5" : ""
+          ].join(" ")}
+          style={containerStyle}
+        >
           {matchedForecasts.map((forecast) => (
             <article
               key={`${forecast.code}-${forecast.station}-${forecast.timestamp}`}
-              className="bg-background border border-border/50 rounded-lg p-4"
+              className="bg-background border border-border/50 rounded-lg p-4 shrink-0"
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">

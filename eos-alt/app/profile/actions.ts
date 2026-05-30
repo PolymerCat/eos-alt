@@ -60,6 +60,15 @@ export async function getStates() {
 
 export async function getDistricts(stateCode: number) {
   const supabase = await createClient();
+
+  const { data: stateData } = await supabase
+    .from("states")
+    .select("state_name")
+    .eq("code", stateCode)
+    .single();
+
+  const stateName = stateData?.state_name ?? "";
+
   const { data, error } = await supabase
     .from("districts")
     .select("*")
@@ -70,7 +79,22 @@ export async function getDistricts(stateCode: number) {
     console.error("Error fetching districts:", error);
     return [];
   }
+
+  if (data && stateName) {
+    return data.map((d) => ({
+      ...d,
+      district: normalizeDistrictName(d.district, stateName, stateCode),
+    }));
+  }
   return data;
+}
+
+function normalizeDistrictName(district: string, stateName: string, stateCode: number): string {
+  if (!district) return "";
+  if (!stateName) return district;
+
+  const regex = new RegExp(`\\b${stateCode}\\b`, "g");
+  return district.replace(regex, stateName).trim();
 }
 
 export async function getUserLocations() {
@@ -84,6 +108,8 @@ export async function getUserLocations() {
       id,
       latitude,
       longitude,
+      state,
+      district,
       states:state(state_name),
       districts:district(district)
     `)
@@ -94,7 +120,20 @@ export async function getUserLocations() {
     console.error("Error fetching locations:", error);
     return [];
   }
-  return data;
+
+  // Normalize corrupted district names containing state codes (e.g. Kuala 11 -> Kuala Terengganu)
+  const normalized = (data ?? []).map((row: any) => {
+    const stateName = Array.isArray(row.states) ? row.states[0]?.state_name : row.states?.state_name;
+    const districtObj = Array.isArray(row.districts) ? row.districts[0] : row.districts;
+
+    if (districtObj && districtObj.district && stateName && row.state) {
+      districtObj.district = normalizeDistrictName(districtObj.district, stateName, row.state);
+    }
+
+    return row;
+  });
+
+  return normalized;
 }
 
 function getDistanceKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
@@ -135,7 +174,11 @@ async function checkEmergenciesAndAlertsForLocation(
     .single();
 
   const stateName = stateData?.state_name ?? "";
-  const districtName = districtData?.district ?? "";
+  let districtName = districtData?.district ?? "";
+
+  if (districtName && stateName) {
+    districtName = normalizeDistrictName(districtName, stateName, stateId);
+  }
 
   // 3. Fetch active JKM shelter snapshots
   const { data: activeSnapshots, error: snapshotError } = await supabase
