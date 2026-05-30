@@ -11,6 +11,7 @@
   "dependencies": {
     "@ducanh2912/next-pwa": "^10.2.9",
     "@maplibre/maplibre-gl-geocoder": "^1.9.4",
+    "@meteocons/svg": "^0.1.0",
     "@supabase/ssr": "^0.9.0",
     "@supabase/supabase-js": "^2.99.2",
     "@turf/mask": "^7.3.4",

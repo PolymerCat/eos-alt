@@ -15,6 +15,48 @@ type WeatherForecastWidgetProps = {
   className?: string;
 };
 
+// Function to map weather Icon to the relative weather forecast
+export function getWeatherIcon(condition: string) {
+  const text = condition.toLowerCase();
+
+  if (text.includes("sunny")) {
+    return "https://cdn.meteocons.com/3.0.0-next.10/svg/fill/clear-day.svg";
+  }
+  if (text.includes("clear")) {
+    return "https://cdn.meteocons.com/3.0.0-next.10/svg/fill/clear-day.svg";
+  }
+
+  if (text.includes("fair")) {
+    return "https://cdn.meteocons.com/3.0.0-next.10/svg/fill/mostly-clear-day.svg";
+  }
+
+  if (text.includes("partly cloudy")) {
+    return "https://cdn.meteocons.com/3.0.0-next.10/svg/fill/partly-cloudy-day.svg";
+  }
+
+  if (text.includes("cloudy")) {
+    return "https://cdn.meteocons.com/3.0.0-next.10/svg/fill/partly-cloudy-day-fog.svg";
+  }
+
+  if (text.includes("thunderstorms")) {
+    return "https://cdn.meteocons.com/3.0.0-next.10/svg/fill/extreme-thunderstorms-rain.svg";
+  }
+
+  if (text.includes("rain")) {
+    return "https://cdn.meteocons.com/3.0.0-next.10/svg/fill/rain.svg";
+  }
+
+  if (text.includes("light rain")) {
+    return "https://cdn.meteocons.com/3.0.0-next.10/svg/fill/drizzle.svg";
+  }
+
+  if (text.includes("heavy rain")) {
+    return "https://cdn.meteocons.com/3.0.0-next.10/svg/fill/extreme-rain.svg";
+  }
+
+  return "https://cdn.meteocons.com/3.0.0-next.10/svg/fill/overcast.svg";
+}
+
 function firstRelationValue<T extends LocationRelation>(
   relation: T | T[] | null | undefined,
   key: keyof T
@@ -144,9 +186,20 @@ export default function WeatherForecastWidget({
                 </div>
               </div>
 
-              <div className="mt-3 flex flex-col gap-1 text-xs text-foreground/50">
-                <span>{summarizeRainfall(forecast.rainfall)}</span>
-                <span>{forecast.timestamp || "Latest update"}</span>
+              <div className="mt-3 flex items-center justify-between gap-4">
+                <div className="flex flex-col gap-1 text-xs text-foreground/50">
+                  <span>{summarizeRainfall(forecast.rainfall)}</span>
+                  <span className="text-[10px] opacity-75">{forecast.timestamp || "Latest update"}</span>
+                </div>
+                <div className="shrink-0">
+                  <img
+                    src={getWeatherIcon(weatherTextFromIcon(forecast.icon))}
+                    alt={weatherTextFromIcon(forecast.icon)}
+                    width="48"
+                    height="48"
+                    className="w-12 h-12 object-contain"
+                  />
+                </div>
               </div>
             </article>
           ))}
