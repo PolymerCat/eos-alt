@@ -1,11 +1,13 @@
-import { getProfile, getStates, getDistricts, getUserLocations, updateProfile, deleteLocation } from "./actions";
+import { getProfile, getStates, getDistricts, getUserLocations, updateProfile, deleteLocation, getNotifications } from "./actions";
+import { getSimulationUserLocations, deleteSimulationLocation, getSimulationNotifications } from "./sim-actions";
 import LocationPicker from "@/components/LocationPicker";
 import { ActionForm, DeleteButton } from "@/components/ActionWrappers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
+import Link from "next/link";
 
 
-export default async function ProfilePage() {
+export default async function ProfilePage(props: { searchParams: Promise<{ tab?: string }> }) {
 
   // 1. Get current session
   const supabase = await createClient();
@@ -14,49 +16,34 @@ export default async function ProfilePage() {
     redirect("/login");
   }
 
-
+  const searchParams = await props.searchParams;
+  const isSim = searchParams.tab === "simulation";
 
   // 2. Fetch Data
-  const [profile, states, locations] = await Promise.all([
+  const [profile, states, locations, notifications] = await Promise.all([
     getProfile(),
     getStates(),
-    getUserLocations()
+    isSim ? getSimulationUserLocations() : getUserLocations(),
+    isSim ? getSimulationNotifications() : getNotifications()
   ]);
 
-  // --- DEBUG LOGS ---
-  console.log("--- SUPABASE DATA FETCH CHECK ---");
-  console.log("States Count:", states?.length || 0);
-  if (states && states.length > 0) {
-    console.table(states.slice(0, 5)); // Shows first 5 states in a nice table
-  } else {
-    console.warn("WARNING: No states returned from Supabase. Check your table permissions (RLS).");
-  }
-  console.log("---------------------------------");
-  // ------------------
-
   // 2. Now that 'states' is defined, fetch the dependent data
-  const selectedStateId = states[0].code;
+  const selectedStateId = states[0]?.code;
 
-  // Fetch data. We use 'as any' here to prevent the 'never' inference
   const districtsResult = selectedStateId
     ? await getDistricts(selectedStateId)
     : ([] as any);
 
-  // Extract the array safely
   const finalDistricts = Array.isArray(districtsResult)
     ? districtsResult
     : (districtsResult as any)?.data || [];
-
-
-  // Log districts result
-  console.log(`Districts for State ${selectedStateId}:`, Array.isArray(districtsResult) ? districtsResult.length : "Data is object");
 
   // 3. Render UI
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
-        {/* LEFT COLUMN: PROFILE & LOCATIONS */}
+        {/* LEFT COLUMN: PROFILE, LOCATIONS, NOTIFICATIONS */}
         <div className="lg:col-span-1 flex flex-col gap-8">
 
           {/* Profile Card */}
@@ -91,15 +78,25 @@ export default async function ProfilePage() {
           </section>
 
           {/* Saved Locations List */}
-          <section className="bg-panel border border-border p-6 rounded-xl shadow-sm flex-grow">
-            <h2 className="text-lg font-bold text-foreground/90 border-b border-border pb-2 mb-4 flex justify-between items-center">
-              Saved Locations
-              <span className="text-xs text-foreground/50 bg-background px-2 py-0.5 rounded-md border border-border">{locations.length} Locations</span>
-            </h2>
+          <section className="bg-panel border border-border p-6 rounded-xl shadow-sm flex-grow flex flex-col">
+            <div className="flex flex-col gap-4 border-b border-border pb-4 mb-4">
+              <h2 className="text-lg font-bold text-foreground/90 flex justify-between items-center">
+                Saved Locations
+                <span className="text-xs text-foreground/50 bg-background px-2 py-0.5 rounded-md border border-border">{locations.length}</span>
+              </h2>
+              <div className="flex gap-2">
+                <Link href="?tab=live" className={`flex-1 text-center py-1.5 text-xs font-semibold rounded-md transition-colors ${!isSim ? 'bg-blue-500 text-white' : 'bg-background border border-border text-foreground/60 hover:text-foreground'}`}>
+                  Live
+                </Link>
+                <Link href="?tab=simulation" className={`flex-1 text-center py-1.5 text-xs font-semibold rounded-md transition-colors ${isSim ? 'bg-emerald-500 text-white' : 'bg-background border border-border text-foreground/60 hover:text-foreground'}`}>
+                  Simulation
+                </Link>
+              </div>
+            </div>
 
             {locations.length === 0 ? (
               <div className="h-32 flex items-center justify-center border border-dashed border-border/50 bg-background/50 rounded-lg">
-                <p className="text-sm text-foreground/50">No saved locations.</p>
+                <p className="text-sm text-foreground/50">No saved locations in {isSim ? "simulation" : "live"} mode.</p>
               </div>
             ) : (
               <ul className="flex flex-col gap-3">
@@ -112,7 +109,11 @@ export default async function ProfilePage() {
                       </div>
                       <DeleteButton actionFunc={async () => {
                         "use server";
-                        await deleteLocation(loc.id);
+                        if (isSim) {
+                          await deleteSimulationLocation(loc.id);
+                        } else {
+                          await deleteLocation(loc.id);
+                        }
                       }} />
                     </div>
                     <div className="pt-2 border-t border-border/30 flex justify-between text-xs text-foreground/40">
@@ -125,18 +126,40 @@ export default async function ProfilePage() {
             )}
           </section>
 
+          {/* Notifications */}
+          <section className="bg-panel border border-border p-6 rounded-xl shadow-sm">
+            <h2 className="text-lg font-bold text-foreground/90 border-b border-border pb-2 mb-4 flex justify-between items-center">
+              Alerts & Notifications
+              <span className="text-xs text-foreground/50 bg-background px-2 py-0.5 rounded-md border border-border">{notifications.length}</span>
+            </h2>
+            
+            {notifications.length === 0 ? (
+              <div className="h-32 flex items-center justify-center border border-dashed border-border/50 bg-background/50 rounded-lg">
+                <p className="text-sm text-foreground/50">No notifications.</p>
+              </div>
+            ) : (
+              <ul className="flex flex-col gap-3 max-h-80 overflow-y-auto custom-scrollbar pr-2">
+                {notifications.map((notif: any) => (
+                  <li key={notif.id} className="p-3 bg-background border border-border/50 rounded-lg flex flex-col gap-1">
+                    <p className="font-semibold text-sm text-foreground">{notif.title}</p>
+                    <p className="text-xs text-foreground/80 line-clamp-3">{notif.message}</p>
+                    <span className="text-[10px] text-foreground/40 mt-1">{new Date(notif.created_at).toLocaleString()}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+
         </div >
 
         {/* RIGHT COLUMN: LOCATION PICKER */}
         < div className="lg:col-span-2" >
           <section className="bg-panel border border-border p-6 rounded-xl shadow-sm h-full flex flex-col">
             <h2 className="text-lg font-bold text-foreground border-b border-border pb-2 mb-6">
-              Add New Location
+              Add New {isSim ? "Simulation " : ""}Location
             </h2>
-            {/* Passed down directly to the client component */}
             <div className="flex-grow flex">
-              {/* Pass finalDistricts directly as an array */}
-              <LocationPicker states={states} initialDistricts={finalDistricts} />
+              <LocationPicker states={states} initialDistricts={finalDistricts} isSimulation={isSim} />
             </div>
           </section>
         </div >

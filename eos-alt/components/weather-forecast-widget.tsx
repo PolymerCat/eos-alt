@@ -98,7 +98,8 @@ function weatherTextFromIcon(iconPath: string): string {
   return "Weather update";
 }
 
-function summarizeRainfall(rainfall: Record<string, string>): string {
+function summarizeRainfall(rainfall: Record<string, string> | undefined | null): string {
+  if (!rainfall) return "No interval data";
   const entries = Object.entries(rainfall);
   if (entries.length === 0) return "No interval data";
 

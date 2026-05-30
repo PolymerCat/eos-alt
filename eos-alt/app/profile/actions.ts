@@ -2,6 +2,7 @@
 
 import { createClient } from "@/utils/supabase/server";
 import { revalidatePath } from "next/cache";
+import { normalizeDistrictName, getDistanceKm } from "@/utils/location";
 
 // --- PROFILES ---
 
@@ -89,14 +90,6 @@ export async function getDistricts(stateCode: number) {
   return data;
 }
 
-function normalizeDistrictName(district: string, stateName: string, stateCode: number): string {
-  if (!district) return "";
-  if (!stateName) return district;
-
-  const regex = new RegExp(`\\b${stateCode}\\b`, "g");
-  return district.replace(regex, stateName).trim();
-}
-
 export async function getUserLocations() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -136,18 +129,22 @@ export async function getUserLocations() {
   return normalized;
 }
 
-function getDistanceKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
-  const R = 6371; // Earth's radius in km
-  const dLat = ((lat2 - lat1) * Math.PI) / 180;
-  const dLon = ((lon2 - lon1) * Math.PI) / 180;
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos((lat1 * Math.PI) / 180) *
-      Math.cos((lat2 * Math.PI) / 180) *
-      Math.sin(dLon / 2) *
-      Math.sin(dLon / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c;
+export async function getNotifications() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return [];
+
+  const { data, error } = await supabase
+    .from("notifications")
+    .select("*")
+    .eq("user_id", user.id)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("Error fetching notifications:", error);
+    return [];
+  }
+  return data;
 }
 
 async function checkEmergenciesAndAlertsForLocation(

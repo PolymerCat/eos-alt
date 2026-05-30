@@ -6,6 +6,7 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import MaplibreGeocoder from "@maplibre/maplibre-gl-geocoder";
 import "@maplibre/maplibre-gl-geocoder/dist/maplibre-gl-geocoder.css";
 import { getDistricts, saveLocation } from "@/app/profile/actions";
+import { saveSimulationLocation } from "@/app/profile/sim-actions";
 import { toast } from "sonner";
 
 interface State {
@@ -20,9 +21,13 @@ interface District {
 
 export default function LocationPicker({
   states,
-  initialDistricts = [] }: {
-    states: State[], initialDistricts?: District[]
-  }) {
+  initialDistricts = [],
+  isSimulation = false
+}: {
+  states: State[], 
+  initialDistricts?: District[],
+  isSimulation?: boolean
+}) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<maplibregl.Map | null>(null);
   const marker = useRef<maplibregl.Marker | null>(null);
@@ -134,12 +139,21 @@ export default function LocationPicker({
   const handleSave = async () => {
     if (!selectedState || !selectedDistrict || !coordinates) return;
     try {
-      await saveLocation(
-        Number(selectedState),
-        Number(selectedDistrict),
-        coordinates.lat,
-        coordinates.lng
-      );
+      if (isSimulation) {
+        await saveSimulationLocation(
+          Number(selectedState),
+          Number(selectedDistrict),
+          coordinates.lat,
+          coordinates.lng
+        );
+      } else {
+        await saveLocation(
+          Number(selectedState),
+          Number(selectedDistrict),
+          coordinates.lat,
+          coordinates.lng
+        );
+      }
       // Reset after save
       setSelectedState("");
       setSelectedDistrict("");
