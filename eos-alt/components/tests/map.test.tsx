@@ -157,10 +157,23 @@ export default function TestMap({ ppsData }: MapProps) {
         essential: true, // this animation is considered essential with respect to prefers-reduced-motion
       });
 
+      // Close all other popups
+      Object.entries(markersRef.current).forEach(([id, marker]) => {
+        if (id !== pps.id) {
+          const popup = marker.getPopup();
+          if (popup && popup.isOpen()) {
+            popup.remove();
+          }
+        }
+      });
+
       if (fromSidebar) {
         const marker = markersRef.current[pps.id];
-        if (marker && !marker.getPopup().isOpen()) {
-          marker.togglePopup();
+        if (marker) {
+          const popup = marker.getPopup();
+          if (popup && !popup.isOpen()) {
+            popup.addTo(map.current);
+          }
         }
       }
     }
@@ -169,6 +182,45 @@ export default function TestMap({ ppsData }: MapProps) {
 
   return (
     <div className="fixed top-16 bottom-0 left-0 right-0 w-full">
+      {/* Global overrides for MapLibre Popups to resolve Tailwind conflict and style beautifully */}
+      <style dangerouslySetInnerHTML={{ __html: `
+        .maplibregl-popup-close-button {
+          padding: 0 !important;
+          font-size: 16px !important;
+          line-height: 1 !important;
+          color: #94a3b8 !important;
+          font-weight: normal !important;
+          transition: color 0.15s, background-color 0.15s !important;
+          border-radius: 9999px !important;
+          margin: 6px !important;
+          border: 0 !important;
+          background: transparent !important;
+          cursor: pointer !important;
+          outline: none !important;
+          width: 24px !important;
+          height: 24px !important;
+          display: flex !important;
+          align-items: center !important;
+          justify-content: center !important;
+          position: absolute !important;
+          right: 0 !important;
+          top: 0 !important;
+        }
+        .maplibregl-popup-close-button:hover {
+          color: #475569 !important;
+          background-color: #f1f5f9 !important;
+        }
+        .maplibregl-popup-content {
+          padding: 0 !important;
+          border-radius: 12px !important;
+          box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1) !important;
+          border: 1px solid #e2e8f0 !important;
+        }
+        .maplibregl-popup-tip {
+          border-top-color: #ffffff !important;
+          border-bottom-color: #ffffff !important;
+        }
+      `}} />
 
       {/* Map container */}
       <div ref={mapContainer} className="absolute inset-0 w-full h-full" />

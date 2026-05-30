@@ -61,17 +61,19 @@ export default function MapPopup({ pps }: MapPopupProps) {
       </div>
 
       {/* Action Button */}
-      <button 
-        onClick={handleViewDetails}
-        className="w-full py-2 px-4 text-xs font-medium bg-slate-900 text-white rounded-md 
-                   hover:bg-slate-800 active:scale-[0.98] transition-all duration-200 
-                   flex items-center justify-center gap-2"
+      <a 
+        href={`https://www.google.com/maps/dir/?api=1&destination=${pps.latti},${pps.longi}`}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="w-full py-2 px-4 text-xs font-semibold bg-blue-600 text-white rounded-md 
+                   hover:bg-blue-700 active:scale-[0.98] transition-all duration-200 
+                   flex items-center justify-center gap-2 decoration-none"
       >
-        <span>View Full Profile</span>
+        <span>Get Directions</span>
         <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M5 12h14m-7-7 7 7-7 7"/>
+          <polygon points="3 11 22 2 13 21 11 13 3 11"/>
         </svg>
-      </button>
+      </a>
     </div>
   );
 }
