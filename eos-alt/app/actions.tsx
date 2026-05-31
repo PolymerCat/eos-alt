@@ -4,6 +4,9 @@ const BASE = "https://infobencanajkmv2.jkm.gov.my/api/pusat-buka.php?a=0&b=0";
 const DEFAULT_MET_FORECAST_URL = "https://www.met.gov.my/json/cuaca_semasa/data.json";
 const MET_FORECAST_URL = process.env.MET_FORECAST_URL ?? DEFAULT_MET_FORECAST_URL;
 
+const MET_FORECAST_STABLE = "https://api.data.gov.my/weather/forecast/";
+
+
 export interface WeatherWarning {
     warning_issue: {
         title_bm: string;
@@ -29,6 +32,7 @@ export interface PPS {
     mangsa: string;
     keluarga: string;
     kapasiti: string;
+    status: string;
 }
 
 export interface WeatherForecast {
@@ -60,6 +64,7 @@ interface JkmPpsRaw {
     keluarga?: unknown;
     kapasiti_maksimum?: unknown;
     kapasiti?: unknown;
+    status?: unknown;
 }
 
 function asText(value: unknown, fallback = ""): string {
@@ -133,6 +138,7 @@ export async function getAlerts(): Promise<PPS[]> {
                 mangsa: asText(item.jumlah_mangsa ?? item.mangsa),
                 keluarga: asText(item.jumlah_keluarga ?? item.keluarga),
                 kapasiti: asPercent(item.kapasiti_maksimum ?? item.kapasiti),
+                status: asText(item.status),
             };
         });
 

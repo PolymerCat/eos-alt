@@ -55,6 +55,9 @@ export default function RootLayout({
                 <Link href="/test-map" className="px-4 py-2 text-foreground/80 hover:text-accent hover:bg-foreground/5 rounded-md transition-colors">
                   Map
                 </Link>
+                <Link href="/simulation" className="px-4 py-2 text-foreground/80 hover:text-accent hover:bg-foreground/5 rounded-md transition-colors">
+                  Simulation
+                </Link>
               </nav>
               <AuthButton />
             </div>

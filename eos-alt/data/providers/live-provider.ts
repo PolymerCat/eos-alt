@@ -52,6 +52,17 @@ type ShelterSnapshotRow = {
   }[] | null;
 };
 
+type ShelterRow = {
+  id: string;
+  name: string;
+  latitude: number;
+  longitude: number;
+  state: string;
+  district: string;
+  mukim: string | null;
+  disaster_type: string | null;
+};
+
 type WeatherAlertRow = {
   id: string;
   source: string;
@@ -145,6 +156,24 @@ function mapSnapshotToShelter(row: ShelterSnapshotRow): PPS | null {
     mangsa: row.victims ?? "0",
     keluarga: row.families ?? "0",
     kapasiti: row.capacity ?? "0.00%",
+    status: "online",
+  };
+}
+
+function mapShelterRowToOfflineShelter(row: ShelterRow): PPS {
+  return {
+    id: row.id,
+    name: row.name,
+    latti: String(row.latitude),
+    longi: String(row.longitude),
+    negeri: row.state,
+    daerah: row.district,
+    mukim: row.mukim ?? "",
+    bencana: row.disaster_type ?? "",
+    mangsa: "0",
+    keluarga: "0",
+    kapasiti: "0.00%",
+    status: "offline",
   };
 }
 
@@ -220,6 +249,7 @@ export async function getLiveEmergencyData(): Promise<EmergencyDataSnapshot> {
 
   // ── Parallel queries ────────────────────────────────────────
   const [
+    shelterResult,
     snapshotResult,
     weatherAlertResult,
     weatherForecasts,
@@ -229,6 +259,13 @@ export async function getLiveEmergencyData(): Promise<EmergencyDataSnapshot> {
     sosResult,
     contactResult,
   ] = await Promise.all([
+    // All saved shelters remain visible; active JKM snapshots mark which are online.
+    supabase
+      .from("shelters")
+      .select("id, name, latitude, longitude, state, district, mukim, disaster_type")
+      .order("name")
+      .limit(1000),
+
     // Latest snapshot per shelter (DISTINCT ON via order + group workaround)
     supabase
       .from("shelter_snapshots")
@@ -283,13 +320,18 @@ export async function getLiveEmergencyData(): Promise<EmergencyDataSnapshot> {
 
   // ── Deduplicate shelters (latest snapshot per shelter_id) ────
   const seenShelterIds = new Set<string>();
-  const shelters: PPS[] = [];
+  const sheltersById = new Map<string, PPS>();
+  for (const row of (shelterResult.data ?? []) as ShelterRow[]) {
+    sheltersById.set(row.id, mapShelterRowToOfflineShelter(row));
+  }
+
   for (const row of (snapshotResult.data ?? []) as ShelterSnapshotRow[]) {
     if (seenShelterIds.has(row.shelter_id)) continue;
     seenShelterIds.add(row.shelter_id);
     const mapped = mapSnapshotToShelter(row);
-    if (mapped) shelters.push(mapped);
+    if (mapped) sheltersById.set(mapped.id, mapped);
   }
+  const shelters: PPS[] = Array.from(sheltersById.values());
 
   const weatherAlerts: WeatherAlert[] = (weatherAlertResult.data ?? []).map(
     (row) => mapWeatherAlert(row as WeatherAlertRow),
@@ -316,7 +358,7 @@ export async function getLiveEmergencyData(): Promise<EmergencyDataSnapshot> {
     : [];
 
   // ── Data source statuses ─────────────────────────────────────
-  const shelterStatus = snapshotResult.error
+  const shelterStatus = shelterResult.error || snapshotResult.error
     ? "degraded"
     : shelters.length > 0
       ? "online"
@@ -349,8 +391,10 @@ export async function getLiveEmergencyData(): Promise<EmergencyDataSnapshot> {
         lastCheckedAt: new Date().toISOString(),
         notes:
           shelterStatus === "online"
-            ? `${shelters.length} active shelter(s) from latest sync.`
-            : snapshotResult.error
+            ? `${seenShelterIds.size} online shelter(s), ${shelters.length - seenShelterIds.size} offline saved shelter(s).`
+            : shelterResult.error
+              ? `DB error: ${shelterResult.error.message}`
+              : snapshotResult.error
               ? `DB error: ${snapshotResult.error.message}`
               : "No active shelters in database. Click Refresh to sync latest data.",
       },

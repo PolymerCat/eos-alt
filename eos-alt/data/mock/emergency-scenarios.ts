@@ -21,6 +21,7 @@ export const simulationScenarios: EmergencyScenario[] = [
         mangsa: "248",
         keluarga: "67",
         kapasiti: "82.00%",
+        status: "online"
       },
       {
         id: "sim-pps-002",
@@ -34,6 +35,7 @@ export const simulationScenarios: EmergencyScenario[] = [
         mangsa: "394",
         keluarga: "108",
         kapasiti: "94.00%",
+        status: "online"
       },
       {
         id: "sim-pps-003",
@@ -47,6 +49,7 @@ export const simulationScenarios: EmergencyScenario[] = [
         mangsa: "121",
         keluarga: "34",
         kapasiti: "46.00%",
+        status: "online"
       },
     ],
     weatherForecasts: [

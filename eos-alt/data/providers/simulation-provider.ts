@@ -1,7 +1,50 @@
 import { defaultScenario, simulationScenarios } from "@/data/mock/emergency-scenarios";
-import type { EmergencyDataSnapshot, EmergencyScenario } from "@/types/emergency";
+import type {
+  DeliveryMethod,
+  DeliveryStatus,
+  EmergencyDataSnapshot,
+  EmergencyScenario,
+  NotificationRecord,
+  SavedLocation,
+} from "@/types/emergency";
 import { getActiveSimulationScenario, getSimulationUserLocations, getSimulationNotifications } from "@/app/profile/sim-actions";
 
+type SimulationLocationRow = {
+  id: number;
+  user_id: string;
+  state: number;
+  district: number;
+  latitude: number;
+  longitude: number;
+  created_at?: string | null;
+  states?: { state_name?: string | null } | { state_name?: string | null }[] | null;
+  districts?: { district?: string | null } | { district?: string | null }[] | null;
+};
+
+type SimulationNotificationRow = {
+  id: number | string;
+  user_id: string;
+  title: string;
+  message: string;
+  delivery_method: string;
+  status: string;
+  created_at: string;
+};
+
+function firstRelationValue<T>(value: T | T[] | null | undefined): T | undefined {
+  return Array.isArray(value) ? value[0] : value ?? undefined;
+}
+
+function toDeliveryMethod(value: string): DeliveryMethod {
+  if (value === "sms" || value === "SMS") return "SMS";
+  if (value === "email" || value === "Email") return "Email";
+  return "App Notification";
+}
+
+function toDeliveryStatus(value: string): DeliveryStatus {
+  if (value === "failed" || value === "skipped" || value === "pending") return value;
+  return "sent";
+}
 
 export async function getSimulationEmergencyData(
   scenarioId?: string
@@ -19,32 +62,37 @@ export async function getSimulationEmergencyData(
     console.error("Failed to load active simulation scenario from DB, falling back to mock", error);
   }
 
-  let dbLocations = [];
-  let dbNotifications = [];
+  let dbLocations: SavedLocation[] = [];
+  let dbNotifications: NotificationRecord[] = [];
   try {
-    const locs = await getSimulationUserLocations();
+    const locs = await getSimulationUserLocations() as SimulationLocationRow[];
     // Map db format to expected SavedLocation format
-    dbLocations = locs.map((loc: any) => ({
-      id: loc.id,
-      userId: loc.user_id,
-      stateCode: loc.state,
-      stateName: loc.states?.state_name,
-      districtId: loc.district,
-      districtName: loc.districts?.district,
-      label: "Saved Location",
-      latitude: loc.latitude,
-      longitude: loc.longitude,
-      createdAt: loc.created_at,
-    }));
+    dbLocations = locs.map((loc) => {
+      const state = firstRelationValue(loc.states);
+      const district = firstRelationValue(loc.districts);
+
+      return {
+        id: loc.id,
+        userId: loc.user_id,
+        stateCode: loc.state,
+        stateName: state?.state_name ?? "Unknown state",
+        districtId: loc.district,
+        districtName: district?.district ?? "Unknown district",
+        label: "Saved Location",
+        latitude: loc.latitude,
+        longitude: loc.longitude,
+        createdAt: loc.created_at ?? new Date().toISOString(),
+      };
+    });
     
-    const notifs = await getSimulationNotifications();
-    dbNotifications = notifs.map((n: any) => ({
+    const notifs = await getSimulationNotifications() as SimulationNotificationRow[];
+    dbNotifications = notifs.map((n) => ({
       id: n.id.toString(),
       userId: n.user_id,
       title: n.title,
       message: n.message,
-      deliveryMethod: n.delivery_method === 'in_app' ? 'App Notification' : n.delivery_method,
-      status: n.status,
+      deliveryMethod: toDeliveryMethod(n.delivery_method),
+      status: toDeliveryStatus(n.status),
       createdAt: n.created_at,
     }));
   } catch (err) {

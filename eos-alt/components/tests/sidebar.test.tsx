@@ -65,6 +65,12 @@ export default function SidebarTest({ ppsData, onPPSSelect, selectedPPS }: Sideb
           {selectedPPS ? (
             <div className="space-y-1 text-sm text-foreground/80">
               <p><span className="font-semibold">Name:</span> {selectedPPS.name}</p>
+              <p>
+                <span className="font-semibold">Status:</span>{" "}
+                <span className={selectedPPS.status === "offline" ? "text-slate-500" : "text-emerald-600"}>
+                  {selectedPPS.status === "offline" ? "Offline" : "Online"}
+                </span>
+              </p>
               <p><span className="font-semibold">Location:</span> {selectedPPS.daerah}, {selectedPPS.negeri}</p>
               <p><span className="font-semibold">Capacity:</span> {selectedPPS.kapasiti}</p>
             </div>

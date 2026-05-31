@@ -46,12 +46,14 @@ export default function ShelterCard({ ppsData, selectedShelter, onShelterClick }
 
   const status = getCapacityStatus(parseFloat(ppsData.kapasiti));
   const label = capacityLabels[status];
+  const shelterStatus = ppsData.status ?? "online";
+  const isOnline = shelterStatus === "online";
 
   return (
     <button
       onClick={() => onShelterClick(ppsData)}
       aria-pressed={selectedShelter}
-      aria-label={`${ppsData.name}, ${ppsData.daerah}, ${ppsData.negeri}. Capacity ${ppsData.kapasiti}. ${label}.`}
+      aria-label={`${ppsData.name}, ${ppsData.daerah}, ${ppsData.negeri}. ${isOnline ? "Online" : "Offline"}. Capacity ${ppsData.kapasiti}. ${label}.`}
       className={cn(
         "w-full text-left px-4 py-3.5 transition-colors duration-150 border-b border-border",
         "hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset",
@@ -68,15 +70,28 @@ export default function ShelterCard({ ppsData, selectedShelter, onShelterClick }
         >
           {ppsData.name}
         </span>
-        <span
-          className={cn(
-            "shrink-0 text-[11px] font-semibold px-2 py-0.5 rounded-full leading-tight",
-            capacityTextColor[status],
-            capacityBadgeBg[status]
-          )}
-        >
-          {label}
-        </span>
+        <div className="flex shrink-0 flex-col items-end gap-1">
+          <span
+            className={cn(
+              "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold leading-tight",
+              isOnline
+                ? "bg-emerald-500/15 text-emerald-700"
+                : "bg-slate-500/15 text-slate-500"
+            )}
+          >
+            <span className={cn("h-1.5 w-1.5 rounded-full", isOnline ? "bg-emerald-500" : "bg-slate-400")} />
+            {isOnline ? "Online" : "Offline"}
+          </span>
+          <span
+            className={cn(
+              "text-[11px] font-semibold px-2 py-0.5 rounded-full leading-tight",
+              capacityTextColor[status],
+              capacityBadgeBg[status]
+            )}
+          >
+            {label}
+          </span>
+        </div>
       </div>
 
       {/* Location */}

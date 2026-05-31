@@ -41,13 +41,15 @@ export default function NavMenu({ userEmail }: NavMenuProps) {
           <>
             {/* Click-outside backdrop overlay */}
             <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
-            
+
             <div className="absolute right-0 mt-2 w-56 rounded-lg border border-border bg-panel p-2 shadow-lg z-50 flex flex-col gap-1">
               {/* User email shown first */}
               <div className="px-3 py-2 border-b border-border mb-1">
                 <p className="text-xs text-foreground/50">Signed in as</p>
                 <p className="text-sm font-semibold text-foreground truncate">{userEmail}</p>
               </div>
+
+
 
               <Link
                 href="/test-ui"
@@ -65,6 +67,15 @@ export default function NavMenu({ userEmail }: NavMenuProps) {
               >
                 <Map className="h-4 w-4 text-foreground/60" />
                 Map
+              </Link>
+
+              <Link
+                href="/simulation"
+                onClick={() => setIsOpen(false)}
+                className="flex items-center gap-2 px-3 py-2 text-sm text-foreground/80 hover:text-accent hover:bg-foreground/5 rounded-md transition-colors"
+              >
+                <LayoutDashboard className="h-4 w-4 text-foreground/60" />
+                Simulation
               </Link>
 
               <Link
