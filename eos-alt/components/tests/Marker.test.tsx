@@ -6,6 +6,7 @@ interface MarkerProps {
   color?: string;
   size?: number;
   pulse?: boolean;
+  label?: string;
 }
 
 /**
@@ -15,11 +16,13 @@ interface MarkerProps {
  * @param color - The hex or tailwind color for the marker (default: #ef4444)
  * @param size - The diameter of the marker in pixels (default: 16)
  * @param pulse - Whether the marker should have a pulsing animation (default: true)
+ * @param label - Optional text displayed below the marker without moving its map anchor
  */
 export default function Marker({ 
   color = "#ef4444", 
   size = 16, 
-  pulse = true 
+  pulse = true,
+  label,
 }: MarkerProps) {
   return (
     <div className="relative flex items-center justify-center" style={{ width: size, height: size }}>
@@ -44,6 +47,12 @@ export default function Marker({
 
       {/* Optional: Add a small white dot in the center for a premium look */}
       <div className="absolute w-1 h-1 bg-white rounded-full opacity-50" />
+
+      {label && (
+        <div className="pointer-events-none absolute left-1/2 top-full mt-1 -translate-x-1/2 whitespace-nowrap rounded-full border border-white/70 bg-blue-600 px-2 py-0.5 text-[10px] font-semibold leading-4 text-white shadow-md">
+          {label}
+        </div>
+      )}
     </div>
   );
 }

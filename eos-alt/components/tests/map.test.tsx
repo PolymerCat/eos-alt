@@ -17,12 +17,11 @@ interface MapProps {
 export default function TestMap({ ppsData }: MapProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<maplibregl.Map | null>(null);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [mapLoaded, setMapLoaded] = useState(false);
   const [selectedPPS, setSelectedPPS] = useState<PPS | null>(null);
   const markersRef = useRef<{ [id: string]: maplibregl.Marker }>({});
   const userMarkerRef = useRef<maplibregl.Marker | null>(null);
-  const { location, error } = useGeolocation();
+  const { location } = useGeolocation();
 
   // Initialize map on component mount
   useEffect(() => {
@@ -48,7 +47,10 @@ export default function TestMap({ ppsData }: MapProps) {
         const geojson = await res.json();
 
         // Add sources (using entire geojson if Malaysia feature not found)
-        const featureData = geojson.features?.find((f: any) => f.properties?.name === 'Malaysia') || geojson;
+        const features = Array.isArray((geojson as { features?: unknown[] }).features)
+          ? (geojson as { features: Array<{ properties?: { name?: string } }> }).features
+          : [];
+        const featureData = features.find((feature) => feature.properties?.name === 'Malaysia') || geojson;
 
         map.current?.addSource('malaysia-source', { type: 'geojson', data: featureData });
 
@@ -87,7 +89,7 @@ export default function TestMap({ ppsData }: MapProps) {
       if (!userMarkerRef.current) {
         const el = document.createElement('div');
         const root = createRoot(el);
-        root.render(<Marker color="#3b82f6" size={20} pulse={true} />);
+        root.render(<Marker color="#3b82f6" size={20} pulse={true} label="You are here" />);
 
         userMarkerRef.current = new maplibregl.Marker({ element: el })
           .setLngLat([longitude, latitude])

@@ -68,9 +68,9 @@ export default async function TestUiHubPage({
       <PageSection title="" description="">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 min-h-[480px]">
           {/* Column 1 (Left Side: takes 2/3 horizontal space) */}
-          <div className="lg:col-span-2 grid grid-rows-3 gap-4 h-full">
+          <div className="lg:col-span-2 flex flex-col lg:grid lg:grid-rows-3 gap-4 h-full">
             {/* Row 1 & 2: Personal Alerts */}
-            <div className="row-span-2 h-full">
+            <div className="lg:row-span-2 lg:h-full">
               <Card
                 title="Personal Alerts"
                 description="Current personal locations in emergency"
@@ -98,10 +98,10 @@ export default async function TestUiHubPage({
               </Card>
             </div>
             {/* Row 3: 2 cards side by side */}
-            <div className="row-span-1 h-full">
-              <div className="grid grid-cols-2 gap-4 h-full">
-                <Link href={`/test-ui/map?mode=${mode}`} className="block h-full">
-                  <Card className="h-full flex flex-col items-center justify-center text-center cursor-pointer hover:border-accent/80 transition-colors group p-4">
+            <div className="lg:row-span-1 lg:h-full">
+              <div className="grid grid-cols-2 gap-4 lg:h-full">
+                <Link href={`/test-ui/map?mode=${mode}`} className="block lg:h-full">
+                  <Card className="aspect-square lg:aspect-auto lg:h-full flex flex-col items-center justify-center text-center cursor-pointer hover:border-accent/80 transition-colors group p-4">
                     <Home className="h-8 w-8 text-foreground/70 group-hover:text-accent transition-colors mb-2" />
                     <h1 className="text-base font-bold text-foreground">Shelters</h1>
                     <span className="text-xs font-semibold text-accent bg-accent/15 px-2 py-0.5 rounded-full mt-1.5">
@@ -109,8 +109,8 @@ export default async function TestUiHubPage({
                     </span>
                   </Card>
                 </Link>
-                <Link href={`/test-ui/alerts?mode=${mode}`} className="block h-full">
-                  <Card className="h-full flex flex-col items-center justify-center text-center cursor-pointer hover:border-accent/80 transition-colors group p-4">
+                <Link href={`/test-ui/alerts?mode=${mode}`} className="block lg:h-full">
+                  <Card className="aspect-square lg:aspect-auto lg:h-full flex flex-col items-center justify-center text-center cursor-pointer hover:border-accent/80 transition-colors group p-4">
                     <MapPin className="h-8 w-8 text-foreground/70 group-hover:text-accent transition-colors mb-2" />
                     <h1 className="text-base font-bold text-foreground">Saved Locations</h1>
                     <span className="text-xs font-semibold text-accent bg-accent/15 px-2 py-0.5 rounded-full mt-1.5">
