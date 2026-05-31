@@ -1,6 +1,6 @@
 import { createClient } from "@/utils/supabase/server";
 import Link from "next/link";
-import { logout } from "@/app/login/actions";
+import NavMenu from "./NavMenu";
 
 export default async function AuthButton() {
   const supabase = await createClient();
@@ -9,19 +9,7 @@ export default async function AuthButton() {
   } = await supabase.auth.getUser();
 
   if (user) {
-    return (
-      <div className="flex items-center gap-4">
-        <div className="flex flex-col text-right">
-          <Link href="/profile" className="text-sm font-medium text-foreground/70 hover:text-accent transition-colors">Profile</Link>
-          <span className="text-sm text-foreground/90 truncate max-w-[150px]">{user.email}</span>
-        </div>
-        <form action={logout}>
-          <button className="px-3 py-1.5 text-sm font-medium bg-background border border-border rounded-md text-foreground/80 hover:bg-foreground/5 transition-colors">
-            Sign Out
-          </button>
-        </form>
-      </div>
-    );
+    return <NavMenu userEmail={user.email || ""} />;
   }
 
   return (
