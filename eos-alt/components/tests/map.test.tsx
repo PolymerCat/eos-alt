@@ -3,24 +3,29 @@ import React, { useEffect, useRef, useState } from 'react';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { createRoot } from 'react-dom/client';
-import { PPS } from '@/app/actions';
+import { PPS, WeatherForecast } from '@/app/actions';
 import SidebarTest from './sidebar.test';
 import MapPopup from './MapPopup';
 import Marker from './Marker.test';
 import { useGeolocation } from '@/hooks/UserLocation';
+import WeatherForecastWidget from '../weather-forecast-widget';
 
 
 interface MapProps {
   ppsData: PPS[];
+  weatherData?: WeatherForecast[];
 }
 
-export default function TestMap({ ppsData }: MapProps) {
+export default function TestMap({ ppsData, weatherData = [] }: MapProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<maplibregl.Map | null>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
   const [selectedPPS, setSelectedPPS] = useState<PPS | null>(null);
+  const [hoveredStateName, setHoveredStateName] = useState<string | null>(null);
+  const [tooltipData, setTooltipData] = useState<{ x: number, y: number, name: string, count: number } | null>(null);
   const markersRef = useRef<{ [id: string]: maplibregl.Marker }>({});
   const userMarkerRef = useRef<maplibregl.Marker | null>(null);
+  const hoveredStateIdRef = useRef<number | null>(null);
   const { location } = useGeolocation();
 
   // Initialize map on component mount
@@ -43,28 +48,110 @@ export default function TestMap({ ppsData }: MapProps) {
     map.current.on('load', async () => {
       try {
         // Fetch boundary from local geojson
-        const res = await fetch('/MY-box.geojson');
+        const res = await fetch('/malaysia-states.geojson');
         const geojson = await res.json();
 
-        // Add sources (using entire geojson if Malaysia feature not found)
-        const features = Array.isArray((geojson as { features?: unknown[] }).features)
-          ? (geojson as { features: Array<{ properties?: { name?: string } }> }).features
-          : [];
-        const featureData = features.find((feature) => feature.properties?.name === 'Malaysia') || geojson;
+        // Count shelters per state
+        const stateCounts: Record<string, number> = {};
+        ppsData.forEach(pps => {
+          const state = pps.negeri || '';
+          const matched = geojson.features.find((f: any) => 
+            f.properties?.name?.toLowerCase().includes(state.toLowerCase()) || 
+            state.toLowerCase().includes(f.properties?.name?.toLowerCase())
+          );
+          if (matched) {
+            const name = matched.properties.name;
+            stateCounts[name] = (stateCounts[name] || 0) + 1;
+          }
+        });
 
-        map.current?.addSource('malaysia-source', { type: 'geojson', data: featureData });
+        // Add shelterCount to features and an ID for hover states
+        geojson.features = geojson.features.map((f: any, i: number) => ({
+          ...f, 
+          id: i + 1, 
+          properties: { ...f.properties, shelterCount: stateCounts[f.properties.name] || 0 }
+        }));
 
-        // Add Malaysia border
+        map.current?.addSource('malaysia-source', { type: 'geojson', data: geojson });
+
+        // Choropleth Layer
+        map.current?.addLayer({
+          id: 'malaysia-choropleth',
+          type: 'fill',
+          source: 'malaysia-source',
+          paint: {
+            'fill-color': [
+              'interpolate',
+              ['linear'],
+              ['get', 'shelterCount'],
+              0, 'rgba(59, 130, 246, 0.05)',   // 0 shelters: subtle blue
+              1, 'rgba(234, 179, 8, 0.4)',     // 1 shelter: yellow
+              5, 'rgba(249, 115, 22, 0.5)',    // 5 shelters: orange
+              15, 'rgba(239, 68, 68, 0.6)'     // 15+ shelters: red
+            ],
+            'fill-opacity': [
+              'case',
+              ['boolean', ['feature-state', 'hover'], false],
+              0.8,
+              1
+            ]
+          }
+        });
+
+        // Borders Layer
         map.current?.addLayer({
           id: 'malaysia-border',
           type: 'line',
           source: 'malaysia-source',
           paint: {
-            'line-color': '#00f2ff',
-            'line-width': 2,
+            'line-color': [
+              'case',
+              ['boolean', ['feature-state', 'hover'], false],
+              '#ffffff',
+              '#00f2ff'
+            ],
+            'line-width': [
+              'case',
+              ['boolean', ['feature-state', 'hover'], false],
+              3,
+              2
+            ],
             'line-blur': 1,
           }
         });
+
+        // Hover events
+        map.current?.on('mousemove', 'malaysia-choropleth', (e) => {
+          if (e.features && e.features.length > 0) {
+            const feature = e.features[0];
+            if (hoveredStateIdRef.current !== null) {
+              map.current?.setFeatureState({ source: 'malaysia-source', id: hoveredStateIdRef.current }, { hover: false });
+            }
+            hoveredStateIdRef.current = feature.id as number;
+            map.current?.setFeatureState({ source: 'malaysia-source', id: hoveredStateIdRef.current }, { hover: true });
+            
+            const stateName = feature.properties?.name || '';
+            const shelterCount = feature.properties?.shelterCount || 0;
+            
+            setHoveredStateName(stateName);
+            setTooltipData({
+              x: e.point.x,
+              y: e.point.y,
+              name: stateName,
+              count: shelterCount
+            });
+          }
+        });
+
+        map.current?.on('mouseleave', 'malaysia-choropleth', () => {
+          if (hoveredStateIdRef.current !== null) {
+            map.current?.setFeatureState({ source: 'malaysia-source', id: hoveredStateIdRef.current }, { hover: false });
+          }
+          hoveredStateIdRef.current = null;
+          setHoveredStateName(null);
+          setTooltipData(null);
+        });
+
       } catch (err) {
         console.error("Map initialization error:", err);
       } finally {
@@ -226,8 +313,34 @@ export default function TestMap({ ppsData }: MapProps) {
 
       {/* Map container */}
       <div ref={mapContainer} className="absolute inset-0 w-full h-full" />
+      
+      {/* Custom Tooltip */}
+      {tooltipData && (
+        <div 
+          className="absolute z-30 pointer-events-none bg-panel/95 backdrop-blur-md border border-border shadow-xl rounded-lg p-3 text-sm flex flex-col gap-1 transform -translate-x-1/2 -translate-y-[calc(100%+15px)]"
+          style={{ left: tooltipData.x, top: tooltipData.y }}
+        >
+          <div className="font-bold text-foreground text-base border-b border-border/50 pb-1 mb-1">{tooltipData.name}</div>
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
+            <span className="text-foreground/80">{tooltipData.count} active shelter{tooltipData.count !== 1 ? 's' : ''}</span>
+          </div>
+        </div>
+      )}
+
+      {/* Weather Overlay */}
+      <div className="absolute top-20 right-4 z-10 w-[340px] pointer-events-none">
+        <div className="pointer-events-auto">
+          <WeatherForecastWidget 
+            forecasts={weatherData}
+            variant="overlay"
+            maxItems={2}
+            locations={hoveredStateName ? [{ states: { state_name: hoveredStateName } }] : (selectedPPS ? [{ states: { state_name: selectedPPS.negeri } }] : [{ states: { state_name: 'Federal Territory of Kuala Lumpur' } }])}
+          />
+        </div>
+      </div>
+
       <SidebarTest ppsData={ppsData} onPPSSelect={handlePPSSelect} selectedPPS={selectedPPS} />
     </div>
   )
 }
-

@@ -1,5 +1,6 @@
 import TestMap from "@/components/tests/map.test";
 import { getEmergencyData } from "@/data/providers/emergency-data-provider";
+import { getWeatherForecasts } from "@/app/actions";
 import Link from "next/link";
 import { Suspense } from "react";
 
@@ -9,6 +10,7 @@ export default async function TestMapPage(props: { searchParams: Promise<{ mode?
   
   const data = await getEmergencyData({ mode });
   const ppsData = data.shelters;
+  const weatherData = await getWeatherForecasts();
 
   return (
     <div className="relative">
@@ -26,7 +28,7 @@ export default async function TestMapPage(props: { searchParams: Promise<{ mode?
           Simulation Data
         </Link>
       </div>
-      <TestMap ppsData={ppsData} />
+      <TestMap ppsData={ppsData} weatherData={weatherData} />
     </div>
   );
 }
