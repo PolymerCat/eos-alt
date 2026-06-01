@@ -2,6 +2,7 @@ import { getEmergencyData, normalizeDataMode } from "@/data/providers/emergency-
 import PageSection from "@/components/test-ui/PageSection";
 import StatusBadge from "@/components/test-ui/StatusBadge";
 import TestUiShell from "@/components/test-ui/TestUiShell";
+import SosWorkspace from "@/components/sos/SosWorkspace";
 
 export default async function TestUiSosPage({
   searchParams,
@@ -20,36 +21,11 @@ export default async function TestUiSosPage({
       mode={mode}
       pathname="/test-ui/sos"
     >
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_360px]">
-        <section className="rounded-lg border border-red-200 bg-red-50 p-8 text-center">
-          <p className="text-sm font-semibold uppercase tracking-wide text-red-700">Emergency Action</p>
-          <h2 className="mt-3 text-3xl font-bold text-red-700">Send SOS Request</h2>
-          <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-red-700/75">
-            The production version should require confirmation, show the selected location,
-            and clearly identify whether the request is simulated or real.
-          </p>
-          <button className="mt-8 rounded-md bg-red-600 px-6 py-3 text-sm font-bold text-white shadow-sm">
-            Hold to Confirm SOS
-          </button>
-        </section>
-
-        <PageSection title="Emergency Contacts">
-          <div className="flex flex-col gap-3">
-            {data.emergencyContacts.map((contact) => (
-              <article key={contact.id} className="rounded-lg border border-border bg-panel p-4">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <h2 className="font-semibold text-foreground">{contact.name}</h2>
-                    <p className="mt-1 text-sm text-foreground/60">{contact.role}</p>
-                  </div>
-                  {contact.isPrimary ? <StatusBadge label="Primary" /> : null}
-                </div>
-                <p className="mt-3 text-sm font-medium text-foreground">{contact.phoneNumber}</p>
-              </article>
-            ))}
-          </div>
-        </PageSection>
-      </div>
+      <SosWorkspace
+        contacts={data.emergencyContacts}
+        latestRequest={draftRequest}
+        mode={mode}
+      />
 
       <PageSection title="Current SOS Draft">
         {draftRequest ? (

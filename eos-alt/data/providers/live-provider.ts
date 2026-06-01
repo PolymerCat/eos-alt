@@ -228,13 +228,19 @@ function mapSosRequest(row: SosRow): SosRequest {
   };
 }
 
+function mapContactDeliveryMethod(value: string | null): EmergencyContact["deliveryMethod"] {
+  if (value === "Email" || value === "email") return "Email";
+  if (value === "SMS" || value === "sms") return "SMS";
+  return "App Notification";
+}
+
 function mapContact(row: ContactRow): EmergencyContact {
   return {
     id: row.id,
     name: row.name,
     role: row.role ?? "",
     phoneNumber: row.phone_number,
-    deliveryMethod: (row.delivery_method ?? "sms") as EmergencyContact["deliveryMethod"],
+    deliveryMethod: mapContactDeliveryMethod(row.delivery_method),
     isPrimary: row.is_primary,
   };
 }
