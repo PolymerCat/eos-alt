@@ -45,10 +45,10 @@ export default async function TestUiHubPage({
       pathname="/test-ui"
     >
       <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
-        <StatCard label="Shelters" value={data.shelters.length} detail="Active or simulated PPS records" />
-        <StatCard label="Weather" value={data.weatherAlerts.length} detail="Warning records available" />
-        <StatCard label="Notifications" value={data.notifications.length} detail="Generated user alert records" />
-        <StatCard label="SOS" value={data.sosRequests.length} detail="Emergency request records" />
+        <StatCard label="Shelters" value={data.shelters.length} detail="Active or simulated PPS records" mode={mode} />
+        <StatCard label="Weather" value={data.weatherAlerts.length} detail="Warning records available" mode={mode} />
+        <StatCard label="Notifications" value={data.notifications.length} detail="Generated user alert records" mode={mode} />
+        <StatCard label="SOS" value={data.sosRequests.length} detail="Emergency request records" mode={mode} />
       </div>
 
       {/* Manual sync button — only in live mode */}
@@ -75,6 +75,7 @@ export default async function TestUiHubPage({
                 title="Personal Alerts"
                 description="Current personal locations in emergency"
                 className="h-full flex flex-col"
+                mode={mode}
               >
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-2 flex-1 content-start overflow-hidden">
                   {data.notifications.slice(0, 6).map((notification) => (
@@ -101,7 +102,10 @@ export default async function TestUiHubPage({
             <div className="lg:row-span-1 lg:h-full">
               <div className="grid grid-cols-2 gap-4 lg:h-full">
                 <Link href={`/test-ui/map?mode=${mode}`} className="block lg:h-full">
-                  <Card className="aspect-square lg:aspect-auto lg:h-full flex flex-col items-center justify-center text-center cursor-pointer hover:border-accent/80 transition-colors group p-4">
+                  <Card 
+                    className="aspect-square lg:aspect-auto lg:h-full flex flex-col items-center justify-center text-center cursor-pointer hover:border-accent/80 transition-colors group p-4"
+                    mode={mode}
+                  >
                     <Home className="h-8 w-8 text-foreground/70 group-hover:text-accent transition-colors mb-2" />
                     <h1 className="text-base font-bold text-foreground">Shelters</h1>
                     <span className="text-xs font-semibold text-accent bg-accent/15 px-2 py-0.5 rounded-full mt-1.5">
@@ -110,7 +114,10 @@ export default async function TestUiHubPage({
                   </Card>
                 </Link>
                 <Link href={`/test-ui/alerts?mode=${mode}`} className="block lg:h-full">
-                  <Card className="aspect-square lg:aspect-auto lg:h-full flex flex-col items-center justify-center text-center cursor-pointer hover:border-accent/80 transition-colors group p-4">
+                  <Card 
+                    className="aspect-square lg:aspect-auto lg:h-full flex flex-col items-center justify-center text-center cursor-pointer hover:border-accent/80 transition-colors group p-4"
+                    mode={mode}
+                  >
                     <MapPin className="h-8 w-8 text-foreground/70 group-hover:text-accent transition-colors mb-2" />
                     <h1 className="text-base font-bold text-foreground">Saved Locations</h1>
                     <span className="text-xs font-semibold text-accent bg-accent/15 px-2 py-0.5 rounded-full mt-1.5">
@@ -128,12 +135,14 @@ export default async function TestUiHubPage({
               locations={forecastLocations}
               maxItems={2}
               className="shrink-0"
+              mode={mode}
             />
 
             <Card
               title="Weather Alerts"
               description="Weather warnings and alerts from MET Malaysia"
               className="flex-1 min-h-0 flex flex-col"
+              mode={mode}
             >
               <div className="flex flex-col gap-2.5 mt-2 overflow-hidden flex-1">
                 {displayAlerts.slice(0, 4).map((alert) => (

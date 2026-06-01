@@ -13,6 +13,7 @@ type WeatherForecastWidgetProps = {
   maxItems?: number;
   variant?: "card" | "overlay";
   className?: string;
+  mode?: "live" | "simulation";
 };
 
 // Function to map weather Icon to the relative weather forecast
@@ -137,6 +138,7 @@ export default function WeatherForecastWidget({
   maxItems = 3,
   variant = "card",
   className = "",
+  mode,
 }: WeatherForecastWidgetProps) {
   const allMatched = getMatchedForecasts(forecasts, locations);
   const matchedForecasts = allMatched.slice(0, 10);
@@ -147,12 +149,29 @@ export default function WeatherForecastWidget({
     ? { maxHeight: `${maxItems * 126 + (maxItems - 1) * 12}px` }
     : undefined;
 
+  // Dynamic theme-aware glows and top borders for parent card
+  const modeShadow = 
+    mode === "live" 
+      ? "shadow-[0_0_15px_-3px_rgba(59,130,246,0.12)] hover:shadow-[0_0_22px_-2px_rgba(59,130,246,0.16)] dark:shadow-[0_0_20px_-5px_rgba(59,130,246,0.2)]"
+      : mode === "simulation"
+      ? "shadow-[0_0_15px_-3px_rgba(16,185,129,0.12)] hover:shadow-[0_0_22px_-2px_rgba(16,185,129,0.16)] dark:shadow-[0_0_20px_-5px_rgba(16,185,129,0.2)]"
+      : "shadow-sm";
+
+  const modeBorder =
+    mode === "live"
+      ? "border-t-[3px] border-t-blue-500/80 border-x-border border-b-border"
+      : mode === "simulation"
+      ? "border-t-[3px] border-t-emerald-500/80 border-x-border border-b-border"
+      : "border-border";
+
   return (
     <section
       className={[
         isOverlay
-          ? "bg-panel/95 backdrop-blur border border-border rounded-lg shadow-lg p-4"
-          : "bg-panel border border-border rounded-xl shadow-sm p-6",
+          ? "bg-panel/95 backdrop-blur border rounded-lg p-4"
+          : "bg-panel border rounded-xl p-6",
+        modeShadow,
+        modeBorder,
         className,
       ].join(" ")}
     >
@@ -195,43 +214,60 @@ export default function WeatherForecastWidget({
           ].join(" ")}
           style={containerStyle}
         >
-          {matchedForecasts.map((forecast) => (
-            <article
-              key={`${forecast.code}-${forecast.station}-${forecast.timestamp}`}
-              className="bg-background border border-border/50 rounded-lg p-4 shrink-0"
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="font-semibold text-sm text-foreground truncate">
-                    {forecast.station}
-                  </p>
-                  <p className="text-xs text-foreground/50">{forecast.state}</p>
-                </div>
-                <div className="text-right shrink-0">
-                  <p className="text-lg font-bold text-foreground">{forecast.temp}</p>
-                  <p className="text-xs text-foreground/60">
-                    {weatherTextFromIcon(forecast.icon)}
-                  </p>
-                </div>
-              </div>
+          {matchedForecasts.map((forecast) => {
+            // Nested forecast articles use side highlights and mode shadows
+            const itemShadow = 
+              mode === "live" 
+                ? "shadow-[0_0_10px_-2px_rgba(59,130,246,0.06)] hover:shadow-[0_0_15px_-2px_rgba(59,130,246,0.1)]"
+                : mode === "simulation"
+                ? "shadow-[0_0_10px_-2px_rgba(16,185,129,0.06)] hover:shadow-[0_0_15px_-2px_rgba(16,185,129,0.1)]"
+                : "shadow-sm";
 
-              <div className="mt-3 flex items-center justify-between gap-4">
-                <div className="flex flex-col gap-1 text-xs text-foreground/50">
-                  <span>{summarizeRainfall(forecast.rainfall)}</span>
-                  <span className="text-[10px] opacity-75">{forecast.timestamp || "Latest update"}</span>
+            const itemBorder =
+              mode === "live"
+                ? "border-l-[3px] border-l-blue-500/80 border-t-border/30 border-r-border/30 border-b-border/30"
+                : mode === "simulation"
+                ? "border-l-[3px] border-l-emerald-500/80 border-t-border/30 border-r-border/30 border-b-border/30"
+                : "border-border/50";
+
+            return (
+              <article
+                key={`${forecast.code}-${forecast.station}-${forecast.timestamp}`}
+                className={`bg-background border rounded-lg p-4 shrink-0 transition-all ${itemShadow} ${itemBorder}`}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="font-semibold text-sm text-foreground truncate">
+                      {forecast.station}
+                    </p>
+                    <p className="text-xs text-foreground/50">{forecast.state}</p>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <p className="text-lg font-bold text-foreground">{forecast.temp}</p>
+                    <p className="text-xs text-foreground/60">
+                      {weatherTextFromIcon(forecast.icon)}
+                    </p>
+                  </div>
                 </div>
-                <div className="shrink-0">
-                  <img
-                    src={getWeatherIcon(weatherTextFromIcon(forecast.icon))}
-                    alt={weatherTextFromIcon(forecast.icon)}
-                    width="48"
-                    height="48"
-                    className="w-12 h-12 object-contain"
-                  />
+
+                <div className="mt-3 flex items-center justify-between gap-4">
+                  <div className="flex flex-col gap-1 text-xs text-foreground/50">
+                    <span>{summarizeRainfall(forecast.rainfall)}</span>
+                    <span className="text-[10px] opacity-75">{forecast.timestamp || "Latest update"}</span>
+                  </div>
+                  <div className="shrink-0">
+                    <img
+                      src={getWeatherIcon(weatherTextFromIcon(forecast.icon))}
+                      alt={weatherTextFromIcon(forecast.icon)}
+                      width="48"
+                      height="48"
+                      className="w-12 h-12 object-contain"
+                    />
+                  </div>
                 </div>
-              </div>
-            </article>
-          ))}
+              </article>
+            );
+          })}
         </div>
       )}
     </section>

@@ -24,7 +24,7 @@ export default function ModeSwitcher({ mode, pathname }: ModeSwitcherProps) {
       <div className="flex w-full sm:w-auto overflow-hidden rounded-md border border-border text-sm font-medium">
         <Link
           href={`${pathname}?mode=simulation`}
-          className={`flex-1 sm:flex-none text-center px-4 py-2 ${isSimulation ? "bg-accent text-accent-foreground" : "bg-background text-foreground/70"}`}
+          className={`flex-1 sm:flex-none text-center px-4 py-2 ${isSimulation ? "bg-emerald-500/80 text-accent-foreground" : "bg-background text-foreground/70"}`}
         >
           Simulation
         </Link>
