@@ -10,11 +10,26 @@ function getCapacityLabel(capacity: string) {
   return { label: "Available", severity: "advisory" as const };
 }
 
-export default function ShelterCard({ shelter }: { shelter: PPS }) {
+export default function ShelterCard({
+  shelter,
+  onClick,
+  isSelected,
+}: {
+  shelter: PPS;
+  onClick?: () => void;
+  isSelected?: boolean;
+}) {
   const capacity = getCapacityLabel(shelter.kapasiti);
 
   return (
-    <article className="rounded-lg border border-border bg-panel p-4 shadow-sm">
+    <article
+      onClick={onClick}
+      className={`rounded-lg border p-4 shadow-sm transition-all duration-200 cursor-pointer ${
+        isSelected
+          ? "border-accent bg-accent/5 ring-1 ring-accent"
+          : "border-border bg-panel hover:bg-foreground/5"
+      }`}
+    >
       <div className="flex items-start justify-between gap-3">
         <div>
           <h3 className="text-sm font-semibold leading-5 text-foreground">
