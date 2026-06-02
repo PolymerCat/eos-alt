@@ -2,6 +2,8 @@ import { createClient } from "@/utils/supabase/server";
 import Link from "next/link";
 import NavMenu from "./NavMenu";
 
+export let isAdmin: boolean;
+
 export default async function AuthButton() {
   const supabase = await createClient();
   const {
@@ -23,3 +25,4 @@ export default async function AuthButton() {
     </div>
   );
 }
+

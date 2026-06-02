@@ -87,6 +87,15 @@ export default function NavMenu({ userEmail }: NavMenuProps) {
                 Profile
               </Link>
 
+              <Link
+                href="/admin"
+                onClick={() => setIsOpen(false)}
+                className="flex items-center gap-2 px-3 py-2 text-sm text-foreground/80 hover:text-accent hover:bg-foreground/5 rounded-md transition-colors"
+              >
+                <User className="h-4 w-4 text-foreground/60" />
+                Admin
+              </Link>
+
               <form action={logout} className="w-full mt-1 border-t border-border pt-1">
                 <button
                   type="submit"
