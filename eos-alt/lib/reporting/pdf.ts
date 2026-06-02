@@ -128,6 +128,15 @@ export function createReportPdfBlob(report: GeneratedReport): Blob {
     pushText(commands, section.heading, LEFT_MARGIN, cursor.y, 13);
     cursor.y -= LINE_HEIGHT;
     section.points.forEach((point) => pushWrappedBullet(commands, point, cursor));
+    if (section.icon === "shelter") {
+      report.onlineShelters.forEach((shelter) =>
+        pushWrappedBullet(
+          commands,
+          `${shelter.name} | ${shelter.state} / ${shelter.district} | ${shelter.latitude}, ${shelter.longitude}`,
+          cursor
+        )
+      );
+    }
     cursor.y -= 8;
   });
 

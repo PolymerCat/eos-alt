@@ -82,6 +82,35 @@ export default function ReportPreview({ report }: ReportPreviewProps) {
                 </li>
               ))}
             </ul>
+            {section.icon === "shelter" ? (
+              <div className="mt-4 grid gap-3 md:grid-cols-2">
+                {report.onlineShelters.length > 0 ? (
+                  report.onlineShelters.map((shelter) => (
+                    <article key={shelter.id} className="rounded-md border border-border bg-background p-4">
+                      <div className="flex items-start gap-3">
+                        <span
+                          aria-label="Online shelter"
+                          className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full bg-emerald-500 shadow-[0_0_0_3px_rgba(16,185,129,0.15)]"
+                        />
+                        <div className="min-w-0">
+                          <h4 className="font-semibold leading-5 text-foreground">{shelter.name}</h4>
+                          <p className="mt-1 text-sm text-foreground/60">
+                            {shelter.state} / {shelter.district}
+                          </p>
+                          <p className="mt-2 text-xs font-medium text-foreground/50">
+                            {shelter.latitude}, {shelter.longitude}
+                          </p>
+                        </div>
+                      </div>
+                    </article>
+                  ))
+                ) : (
+                  <p className="rounded-md border border-border bg-background p-3 text-sm text-foreground/60">
+                    No online shelters listed.
+                  </p>
+                )}
+              </div>
+            ) : null}
           </section>
         ))}
       </div>

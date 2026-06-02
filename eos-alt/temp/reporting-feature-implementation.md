@@ -10,6 +10,7 @@ The first reporting implementation supports:
 - PDF download
 - Live/simulation mode labels
 - No report persistence yet
+- Public information only; no personalization context
 
 This matches the agreed first scope from `temp/reporting-feature-plan.md`.
 
@@ -76,6 +77,8 @@ It renders:
 - summary
 - icon-backed key metrics
 - report sections as short bullet points
+- online shelter cards with green status dots
+- online shelter details: name, state, district, and coordinates
 - disclaimer
 
 ## Page Updated
@@ -99,6 +102,7 @@ It no longer depends on `data.reports[0]`, so live mode can generate reports eve
 - Report content is structured as points instead of dense paragraphs.
 - PDF generation runs only when the user clicks download.
 - The public report excludes private emergency contact details.
+- The public report excludes saved-location, notification, and SOS personalization context.
 - Simulation mode is clearly labeled in the generated report and disclaimer.
 
 ## Performance Notes

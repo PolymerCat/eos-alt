@@ -22,6 +22,15 @@ export interface GeneratedReportMetric {
   icon: "shelter" | "weather" | "people" | "location";
 }
 
+export interface GeneratedReportShelter {
+  id: string;
+  name: string;
+  state: string;
+  district: string;
+  latitude: string;
+  longitude: string;
+}
+
 export interface GeneratedReport {
   id: string;
   title: string;
@@ -31,6 +40,7 @@ export interface GeneratedReport {
   type: ReportType;
   audience: ReportAudience;
   metrics: GeneratedReportMetric[];
+  onlineShelters: GeneratedReportShelter[];
   sections: GeneratedReportSection[];
   disclaimer: string;
 }
