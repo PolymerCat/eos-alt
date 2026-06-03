@@ -4,13 +4,13 @@ import type { DataMode } from "@/types/emergency";
 import LiveClock from "./LiveClock";
 
 const navItems = [
-  { href: "/test-ui", label: "Hub" },
-  { href: "/test-ui/map", label: "Map" },
-  { href: "/test-ui/weather", label: "Weather" },
-  { href: "/test-ui/alerts", label: "Alerts" },
-  { href: "/test-ui/sos", label: "SOS" },
-  { href: "/test-ui/reports", label: "Reports" },
-  { href: "/test-ui/pipeline", label: "Pipeline" },
+  { href: "/", label: "Hub" },
+  { href: "/test-map", label: "Map" },
+  { href: "/weather", label: "Weather" },
+  { href: "/alerts", label: "Alerts" },
+  { href: "/sos", label: "SOS" },
+  { href: "/reports", label: "Reports" },
+  { href: "/pipeline", label: "Pipeline" },
   { href: "/test-ui/pwa", label: "PWA" },
 ];
 

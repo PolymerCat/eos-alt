@@ -42,7 +42,7 @@ export default async function TestUiHubPage({
       title="Emergency OS Dashboard"
       description="A review area for future Emergency OS modules. Every card uses the switchable data provider so live data and simulation scenarios can coexist."
       mode={mode}
-      pathname="/test-ui"
+      pathname="/"
     >
       <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
         <StatCard label="Shelters" value={data.shelters.length} detail="Active or simulated PPS records" mode={mode} />
