@@ -17,7 +17,7 @@ export default async function TestUiWeatherPage({
       title="Weather Forecast and Alerts"
       description="Prototype for weather warnings, severity cards, and feed health. This can consume live METMalaysia warnings or simulation scenarios."
       mode={mode}
-      pathname="/test-ui/weather"
+      pathname="/weather"
     >
       <PageSection title="Normalized Weather Alerts">
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">

@@ -16,7 +16,7 @@ export default async function TestUiMapPage({
       title="Interactive Emergency Map"
       description="Prototype for the full-screen map experience: shelter panel, map overlays, weather widget, selected shelter detail, and nearest shelter action."
       mode={mode}
-      pathname="/test-ui/map"
+      pathname="/shelters"
     >
       <InteractiveMapLayout
         shelters={data.shelters}

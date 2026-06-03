@@ -17,7 +17,7 @@ export default async function TestUiAlertsPage({
       title="Personalized Alerts and Notifications"
       description="Prototype for matching warnings against saved locations and user alert preferences."
       mode={mode}
-      pathname="/test-ui/alerts"
+      pathname="/alerts"
     >
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <PageSection title="Saved Locations">

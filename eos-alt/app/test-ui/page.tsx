@@ -101,8 +101,8 @@ export default async function TestUiHubPage({
             {/* Row 3: 2 cards side by side */}
             <div className="lg:row-span-1 lg:h-full">
               <div className="grid grid-cols-2 gap-4 lg:h-full">
-                <Link href={`/test-ui/map?mode=${mode}`} className="block lg:h-full">
-                  <Card 
+                <Link href={`/shelters?mode=${mode}`} className="block lg:h-full">
+                  <Card
                     className="aspect-square lg:aspect-auto lg:h-full flex flex-col items-center justify-center text-center cursor-pointer hover:border-accent/80 transition-colors group p-4"
                     mode={mode}
                   >
@@ -113,8 +113,8 @@ export default async function TestUiHubPage({
                     </span>
                   </Card>
                 </Link>
-                <Link href={`/test-ui/alerts?mode=${mode}`} className="block lg:h-full">
-                  <Card 
+                <Link href={`/alerts?mode=${mode}`} className="block lg:h-full">
+                  <Card
                     className="aspect-square lg:aspect-auto lg:h-full flex flex-col items-center justify-center text-center cursor-pointer hover:border-accent/80 transition-colors group p-4"
                     mode={mode}
                   >
@@ -163,7 +163,7 @@ export default async function TestUiHubPage({
 
               <div className="mt-3 pt-2 border-t border-border/50 flex justify-end">
                 <Link
-                  href={`/test-ui/weather?mode=${mode}`}
+                  href={`/weather?mode=${mode}`}
                   className="text-xs font-semibold text-accent hover:underline flex items-center gap-1 group"
                 >
                   All weather alerts

@@ -17,7 +17,7 @@ export default async function TestUiPipelinePage({
       title="Government Agency Data Pipeline"
       description="Prototype for admin/developer visibility into source health, extraction, transformation, and storage."
       mode={mode}
-      pathname="/test-ui/pipeline"
+      pathname="/pipeline"
     >
       <PageSection title="Source Status Board">
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
