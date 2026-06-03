@@ -1,8 +1,13 @@
 import Link from "next/link";
-import { getEmergencyData } from "@/data/providers/emergency-data-provider";
+import { getEmergencyData, normalizeDataMode } from "@/data/providers/emergency-data-provider";
 import type { SavedLocation } from "@/types/emergency";
-import { createClient } from "@/utils/supabase/server";
+import PageSection from "@/components/test-ui/PageSection";
+import StatCard from "@/components/test-ui/StatCard";
+import TestUiShell from "@/components/test-ui/TestUiShell";
+import Card from "@/components/test-ui/Card";
+import { Home, MapPin } from "lucide-react";
 import LiveUpdateBar from "@/components/live-update-bar";
+import DataSyncButton from "@/components/DataSyncButton";
 import WeatherForecastWidget, { WeatherForecastLocation } from "@/components/weather-forecast-widget";
 
 function toWeatherForecastLocations(savedLocations: SavedLocation[]): WeatherForecastLocation[] {
@@ -12,135 +17,214 @@ function toWeatherForecastLocations(savedLocations: SavedLocation[]): WeatherFor
   }));
 }
 
-export default async function Home() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  const data = await getEmergencyData({ mode: "live" });
-
-  const savedDistricts = data.savedLocations
-    .map((loc) => loc.districtName.toLowerCase().trim())
-    .filter(Boolean);
-
+export default async function TestUiHubPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ mode?: string }>;
+}) {
+  const params = await searchParams;
+  const mode = normalizeDataMode(params.mode);
+  const data = await getEmergencyData({ mode });
   const forecastLocations = toWeatherForecastLocations(data.savedLocations);
 
-  // If user is not logged in, show all. If logged in, filter by their districts.
-  const validAlerts = user
-    ? data.shelters.filter((center) => savedDistricts.includes(center.daerah.toLowerCase().trim()))
-    : data.shelters;
+  const isLive = mode === "live";
+  const displayAlerts = data.weatherAlerts;
+
+  const getDotColor = (severity: string) => {
+    if (severity === "critical") return "bg-red-500";
+    if (severity === "warning") return "bg-amber-500";
+    if (severity === "watch") return "bg-blue-500";
+    return "bg-slate-500";
+  };
 
   return (
-    <>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-20">
-        {/* Header section */}
-        <div className="mb-8 border-b border-border pb-4">
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">
-            Flood Alerts Overview
-          </h1>
-          <p className="text-foreground/60 mt-2 text-sm">
-            Monitoring regional flood status and shelter availability.
-          </p>
-        </div>
+    <TestUiShell
+      title="Emergency OS Dashboard"
+      description="A review area for future Emergency OS modules. Every card uses the switchable data provider so live data and simulation scenarios can coexist."
+      mode={mode}
+      pathname="/test-ui"
+    >
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+        <StatCard label="Shelters" value={data.shelters.length} detail="Active or simulated PPS records" mode={mode} />
+        <StatCard label="Weather" value={data.weatherAlerts.length} detail="Warning records available" mode={mode} />
+        <StatCard label="Notifications" value={data.notifications.length} detail="Generated user alert records" mode={mode} />
+        <StatCard label="SOS" value={data.sosRequests.length} detail="Emergency request records" mode={mode} />
+      </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Main Alert Panel - spans 2 columns */}
-          <div className="md:col-span-2 bg-panel border gap-2 border-border p-6 rounded-xl shadow-sm relative overflow-hidden">
-            <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-red-600"></span>
-              Active Alerts
-            </h2>
-            {(!validAlerts || validAlerts.length === 0) ? (
-              <div className="mt-4 p-4 bg-background border border-border/50 rounded-lg flex flex-col items-center justify-center text-center min-h-[200px]">
-                <p className="text-foreground/50 text-sm">
-                  {user ? (
-                    savedDistricts.length === 0
-                      ? "You have no saved locations. Add some in your profile."
-                      : "No active alerts in your saved districts."
-                  ) : (
-                    "Please sign in to view personalized alerts."
-                  )}
-                </p>
-              </div>
-            ) : (
-              <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {validAlerts.map((center) => (
-                  <div key={center.id} className="bg-panel border border-border p-4 rounded-xl flex flex-col">
-                    <div className="flex justify-between items-start mb-2 gap-2">
-                      <h2 className="font-semibold text-foreground text-sm leading-tight">{center.name}</h2>
-                      <span className="text-xs font-medium bg-red-600 text-white px-2 py-0.5 border border-border rounded-md whitespace-nowrap">
-                        {center.negeri}
-                      </span>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-2 text-xs text-foreground/70 flex-grow mt-2">
-                      <div className="flex flex-col">
-                        <span>Victims:</span>
-                        <span className="text-foreground font-semibold text-sm">{center.mangsa}</span>
-                      </div>
-                      <div className="flex flex-col">
-                        <span>Capacity:</span>
-                        <span className="text-foreground font-semibold text-sm">{center.kapasiti}</span>
-                      </div>
-                    </div>
-
-                    <div className="mt-4 pt-2 border-t border-border/30 text-xs text-foreground/40 flex flex-col gap-2">
-                      <span>District: {center.daerah} - {center.mukim}</span>
-                      <div className="flex items-center justify-between">
-                        <span className="text-accent/80">Location: {center.latti}, {center.longi}</span>
-                        <a
-                          href={`https://www.google.com/maps/dir/?api=1&destination=${center.latti},${center.longi}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="bg-accent text-accent-foreground hover:bg-accent/90 px-3 py-1.5 rounded-md transition-colors flex items-center gap-1.5 font-medium shadow-sm"
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="3 11 22 2 13 21 11 13 3 11"></polygon></svg>
-                          Go Now
-                        </a>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
+      {/* Manual sync button — only in live mode */}
+      {isLive && (
+        <div className="flex items-center justify-between rounded-lg border border-border bg-panel px-4 py-3">
+          <div>
+            <p className="text-sm font-semibold text-foreground">Live Data Sync</p>
+            <p className="text-xs text-foreground/50 mt-0.5">
+              Shelter and weather data is synced automatically every 10 min. Trigger manually if needed.
+            </p>
           </div>
+          <DataSyncButton />
+        </div>
+      )}
 
-          {/* User Status / Quick Actions */}
-          <div className="flex flex-col gap-6">
-            <div className="bg-panel border border-border p-6 rounded-xl shadow-sm flex flex-col gap-4">
-              <h2 className="text-lg font-bold text-foreground/90 border-b border-border pb-2">
-                User Account
-              </h2>
-              <div className="flex-grow flex flex-col items-center justify-center text-center p-4 bg-background border border-border/50 rounded-lg">
-                {!user ? (
-                  <>
-                    <p className="text-foreground/50 text-sm mb-4">You are not signed in.</p>
-                    <Link href="/login" className="w-full bg-accent text-accent-foreground font-medium rounded-md py-2 px-4 text-sm hover:bg-accent/90 transition-all text-center block">
-                      Sign In
-                    </Link>
-                  </>
-                ) : (
-                  <>
-                    <p className="text-foreground/90 font-medium text-sm mb-1">Signed In</p>
-                    <p className="text-accent text-xs mb-4 truncate w-full">{user.email}</p>
-                    <Link href="/map" className="w-full bg-foreground text-background font-medium rounded-md py-2 px-4 text-sm hover:bg-foreground/90 transition-all text-center block border border-foreground">
-                      View Map
-                    </Link>
-                  </>
-                )}
+
+      <PageSection title="" description="">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 min-h-[480px]">
+          {/* Column 1 (Left Side: takes 2/3 horizontal space) */}
+          <div className="lg:col-span-2 flex flex-col lg:grid lg:grid-rows-3 gap-4 h-full">
+            {/* Row 1 & 2: Personal Alerts */}
+            <div className="lg:row-span-2 lg:h-full">
+              <Card
+                title="Personal Alerts"
+                description="Current personal locations in emergency"
+                className="h-full flex flex-col"
+                mode={mode}
+              >
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-2 flex-1 content-start overflow-hidden">
+                  {data.notifications.slice(0, 6).map((notification) => (
+                    <div key={notification.id} className="rounded-lg border border-border bg-panel/30 p-3 flex flex-col justify-between hover:border-accent/40 transition-colors">
+                      <div>
+                        <h4 className="font-semibold text-xs text-foreground line-clamp-1">{notification.title}</h4>
+                        <p className="mt-1 text-[11px] leading-relaxed text-foreground/70 line-clamp-2">{notification.message}</p>
+                      </div>
+                      <div className="mt-2 flex items-center justify-between text-[10px] text-foreground/50 border-t border-border/50 pt-1">
+                        <span>Via {notification.deliveryMethod}</span>
+                        <span className="capitalize px-1.5 py-0.25 bg-accent/15 text-accent rounded-sm font-semibold">{notification.status}</span>
+                      </div>
+                    </div>
+                  ))}
+                  {data.notifications.length === 0 && (
+                    <div className="col-span-2 flex flex-col items-center justify-center py-10 text-foreground/55 text-xs italic">
+                      No recent personal alerts.
+                    </div>
+                  )}
+                </div>
+              </Card>
+            </div>
+            {/* Row 3: 2 cards side by side */}
+            <div className="lg:row-span-1 lg:h-full">
+              <div className="grid grid-cols-2 gap-4 lg:h-full">
+                <Link href={`/shelters?mode=${mode}`} className="block lg:h-full">
+                  <Card
+                    className="aspect-square lg:aspect-auto lg:h-full flex flex-col items-center justify-center text-center cursor-pointer hover:border-accent/80 transition-colors group p-4"
+                    mode={mode}
+                  >
+                    <Home className="h-8 w-8 text-foreground/70 group-hover:text-accent transition-colors mb-2" />
+                    <h1 className="text-base font-bold text-foreground">Shelters</h1>
+                    <span className="text-xs font-semibold text-accent bg-accent/15 px-2 py-0.5 rounded-full mt-1.5">
+                      {data.shelters.length} Available
+                    </span>
+                  </Card>
+                </Link>
+                <Link href={`/alerts?mode=${mode}`} className="block lg:h-full">
+                  <Card
+                    className="aspect-square lg:aspect-auto lg:h-full flex flex-col items-center justify-center text-center cursor-pointer hover:border-accent/80 transition-colors group p-4"
+                    mode={mode}
+                  >
+                    <MapPin className="h-8 w-8 text-foreground/70 group-hover:text-accent transition-colors mb-2" />
+                    <h1 className="text-base font-bold text-foreground">Saved Locations</h1>
+                    <span className="text-xs font-semibold text-accent bg-accent/15 px-2 py-0.5 rounded-full mt-1.5">
+                      {data.savedLocations.length} Places
+                    </span>
+                  </Card>
+                </Link>
               </div>
             </div>
+          </div>
 
+          <div className="lg:col-span-1 h-full flex flex-col gap-4">
             <WeatherForecastWidget
               forecasts={data.weatherForecasts}
               locations={forecastLocations}
-              maxItems={3}
+              maxItems={2}
+              className="shrink-0"
+              mode={mode}
             />
+
+            <Card
+              title="Weather Alerts"
+              description="Weather warnings and alerts from MET Malaysia"
+              className="flex-1 min-h-0 flex flex-col"
+              mode={mode}
+            >
+              <div className="flex flex-col gap-2.5 mt-2 overflow-hidden flex-1">
+                {displayAlerts.slice(0, 4).map((alert) => (
+                  <div key={alert.id} className="rounded-lg border border-border bg-panel/30 p-2.5 flex flex-col gap-1 hover:border-accent/40 transition-colors">
+                    <div className="flex items-center gap-2">
+                      <span className={`w-2 h-2 rounded-full flex-shrink-0 animate-pulse ${getDotColor(alert.severity)}`}></span>
+                      <h4 className="font-bold text-xs text-foreground line-clamp-1">{alert.title}</h4>
+                    </div>
+                    <p className="text-[11px] leading-relaxed text-foreground/70 line-clamp-2 mt-0.5">{alert.description}</p>
+                  </div>
+                ))}
+                {displayAlerts.length === 0 && (
+                  <div className="flex flex-col items-center justify-center py-12 text-foreground/55 text-xs italic">
+                    No active weather warnings.
+                  </div>
+                )}
+              </div>
+
+              <div className="mt-3 pt-2 border-t border-border/50 flex justify-end">
+                <Link
+                  href={`/weather?mode=${mode}`}
+                  className="text-xs font-semibold text-accent hover:underline flex items-center gap-1 group"
+                >
+                  All weather alerts
+                  <span className="group-hover:translate-x-0.5 transition-transform">→</span>
+                </Link>
+              </div>
+            </Card>
           </div>
         </div>
-      </div>
-      <LiveUpdateBar alerts={data.weatherAlerts} />
-    </>
+      </PageSection>
+
+      {/* #region SAMPLE CODE */}
+      {/* <PageSection title="Flexible Card Showcase" description="Examples showing the versatility of the new flexible Card component.">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+          <Card
+            title="Standard Info Card"
+            description="A default layout with a title and a description. Useful for presenting general text-based content."
+          />
+
+          <Card
+            title="Card with Action Items"
+            description="This card includes custom children for interactive elements like buttons and lists."
+          >
+            <div className="mt-2 space-y-2">
+              <div className="flex items-center justify-between text-xs border-b border-border pb-1">
+                <span>Task status</span>
+                <span className="text-emerald-500 font-semibold">Active</span>
+              </div>
+              <div className="flex justify-end gap-2 pt-2">
+                <button className="px-3 py-1 bg-foreground text-background rounded text-xs hover:opacity-90">
+                  Enable
+                </button>
+              </div>
+            </div>
+          </Card>
+
+          <Card className="border-accent bg-accent/5">
+            <div className="flex flex-col h-full justify-between">
+              <div>
+                <span className="inline-block px-2 py-0.5 bg-accent/20 text-accent rounded text-[10px] font-bold uppercase tracking-wider mb-2">
+                  Highlight
+                </span>
+                <h3 className="text-base font-bold text-foreground leading-snug">
+                  Fully Customized Layout
+                </h3>
+                <p className="mt-1 text-sm text-foreground/70 leading-relaxed">
+                  No title or description props passed. All layouts and content are passed as children, with custom border/background classes.
+                </p>
+              </div>
+              <div className="mt-4 text-xs text-foreground/50 italic">
+                Custom styled container
+              </div>
+            </div>
+          </Card>
+        </div>
+      </PageSection> */}
+      {/* #endregion */}
+
+
+      <div className="pt-4"><LiveUpdateBar alerts={data.weatherAlerts} /></div>
+
+    </TestUiShell>
   );
 }
