@@ -52,7 +52,7 @@ export default function NavMenu({ userEmail }: NavMenuProps) {
 
 
               <Link
-                href="/test-ui"
+                href="/"
                 onClick={() => setIsOpen(false)}
                 className="flex items-center gap-2 px-3 py-2 text-sm text-foreground/80 hover:text-accent hover:bg-foreground/5 rounded-md transition-colors"
               >

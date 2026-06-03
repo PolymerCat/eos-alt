@@ -9,7 +9,7 @@ import { createClient } from "@/utils/supabase/server";
 
 
 
-async function getAdmin() {
+export async function getAdmin() {
   let isAdmin: boolean = false;
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();

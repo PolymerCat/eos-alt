@@ -18,7 +18,7 @@ export default function AdminForbidden({ email, reason }: AdminForbiddenProps) {
           {reason}
         </p>
         <Link
-          href="/test-ui"
+          href="/"
           className="mt-5 inline-flex rounded-md border border-border px-4 py-2 text-sm font-semibold transition hover:bg-background"
         >
           Back to overview

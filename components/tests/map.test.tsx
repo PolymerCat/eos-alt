@@ -9,6 +9,7 @@ import MapPopup from './MapPopup';
 import Marker from './Marker.test';
 import { useGeolocation } from '@/hooks/UserLocation';
 import WeatherForecastWidget from '../weather-forecast-widget';
+import { Navigation, CloudRain } from 'lucide-react';
 
 
 interface MapProps {
@@ -23,10 +24,12 @@ export default function TestMap({ ppsData, weatherData = [] }: MapProps) {
   const [selectedPPS, setSelectedPPS] = useState<PPS | null>(null);
   const [hoveredStateName, setHoveredStateName] = useState<string | null>(null);
   const [tooltipData, setTooltipData] = useState<{ x: number, y: number, name: string, count: number } | null>(null);
+  const [showWeather, setShowWeather] = useState(false);
   const markersRef = useRef<{ [id: string]: maplibregl.Marker }>({});
   const userMarkerRef = useRef<maplibregl.Marker | null>(null);
   const hoveredStateIdRef = useRef<number | null>(null);
-  const { location } = useGeolocation();
+  const initialCenterRef = useRef(false);
+  const { location, error } = useGeolocation();
 
   // Initialize map on component mount
   useEffect(() => {
@@ -55,8 +58,8 @@ export default function TestMap({ ppsData, weatherData = [] }: MapProps) {
         const stateCounts: Record<string, number> = {};
         ppsData.forEach(pps => {
           const state = pps.negeri || '';
-          const matched = geojson.features.find((f: any) => 
-            f.properties?.name?.toLowerCase().includes(state.toLowerCase()) || 
+          const matched = geojson.features.find((f: any) =>
+            f.properties?.name?.toLowerCase().includes(state.toLowerCase()) ||
             state.toLowerCase().includes(f.properties?.name?.toLowerCase())
           );
           if (matched) {
@@ -67,8 +70,8 @@ export default function TestMap({ ppsData, weatherData = [] }: MapProps) {
 
         // Add shelterCount to features and an ID for hover states
         geojson.features = geojson.features.map((f: any, i: number) => ({
-          ...f, 
-          id: i + 1, 
+          ...f,
+          id: i + 1,
           properties: { ...f.properties, shelterCount: stateCounts[f.properties.name] || 0 }
         }));
 
@@ -129,10 +132,10 @@ export default function TestMap({ ppsData, weatherData = [] }: MapProps) {
             }
             hoveredStateIdRef.current = feature.id as number;
             map.current?.setFeatureState({ source: 'malaysia-source', id: hoveredStateIdRef.current }, { hover: true });
-            
+
             const stateName = feature.properties?.name || '';
             const shelterCount = feature.properties?.shelterCount || 0;
-            
+
             setHoveredStateName(stateName);
             setTooltipData({
               x: e.point.x,
@@ -186,9 +189,23 @@ export default function TestMap({ ppsData, weatherData = [] }: MapProps) {
       }
 
       // Optionally fly to user location on first fix
-      map.current.flyTo({ center: [longitude, latitude], zoom: 12 });
+      if (!initialCenterRef.current) {
+        map.current.flyTo({ center: [longitude, latitude], zoom: 12 });
+        initialCenterRef.current = true;
+      }
     }
   }, [location]);
+
+  const handleCenterOnUser = () => {
+    if (location && map.current) {
+      const { latitude, longitude } = location.coords;
+      map.current.flyTo({
+        center: [longitude, latitude],
+        zoom: 12,
+        essential: true,
+      });
+    }
+  };
 
   // Handle markers when map is loaded or data changes
   useEffect(() => {
@@ -219,6 +236,10 @@ export default function TestMap({ ppsData, weatherData = [] }: MapProps) {
         closeButton: true,
         maxWidth: 'none'
       }).setDOMContent(popupNode);
+
+      popup.on('close', () => {
+        setSelectedPPS(prev => prev?.id === pps.id ? null : prev);
+      });
 
       const marker = new maplibregl.Marker({ element: markerEl })
         .setLngLat([lng, lat])
@@ -272,7 +293,8 @@ export default function TestMap({ ppsData, weatherData = [] }: MapProps) {
   return (
     <div className="fixed top-16 bottom-0 left-0 right-0 w-full">
       {/* Global overrides for MapLibre Popups to resolve Tailwind conflict and style beautifully */}
-      <style dangerouslySetInnerHTML={{ __html: `
+      <style dangerouslySetInnerHTML={{
+        __html: `
         .maplibregl-popup-close-button {
           padding: 0 !important;
           font-size: 16px !important;
@@ -309,14 +331,17 @@ export default function TestMap({ ppsData, weatherData = [] }: MapProps) {
           border-top-color: #ffffff !important;
           border-bottom-color: #ffffff !important;
         }
+        .maplibregl-popup {
+          z-index: 40 !important;
+        }
       `}} />
 
       {/* Map container */}
       <div ref={mapContainer} className="absolute inset-0 w-full h-full" />
-      
+
       {/* Custom Tooltip */}
-      {tooltipData && (
-        <div 
+      {tooltipData && !selectedPPS && (
+        <div
           className="absolute z-30 pointer-events-none bg-panel/95 backdrop-blur-md border border-border shadow-xl rounded-lg p-3 text-sm flex flex-col gap-1 transform -translate-x-1/2 -translate-y-[calc(100%+15px)]"
           style={{ left: tooltipData.x, top: tooltipData.y }}
         >
@@ -328,15 +353,56 @@ export default function TestMap({ ppsData, weatherData = [] }: MapProps) {
         </div>
       )}
 
-      {/* Weather Overlay */}
-      <div className="absolute top-20 right-4 z-10 w-[340px] pointer-events-none">
-        <div className="pointer-events-auto">
-          <WeatherForecastWidget 
-            forecasts={weatherData}
-            variant="overlay"
-            maxItems={2}
-            locations={hoveredStateName ? [{ states: { state_name: hoveredStateName } }] : (selectedPPS ? [{ states: { state_name: selectedPPS.negeri } }] : [{ states: { state_name: 'Federal Territory of Kuala Lumpur' } }])}
-          />
+      {/* Weather Forecast Toggle and Card Panel */}
+      <div className="absolute top-20 right-4 z-10 flex flex-col items-end gap-2 pointer-events-none origin-top-right scale-[0.7] md:scale-100">
+        <button
+          onClick={() => setShowWeather(!showWeather)}
+          className="pointer-events-auto flex items-center gap-2 px-3 py-2 rounded-xl bg-panel/95 backdrop-blur-md border border-border text-xs font-semibold shadow-lg text-foreground transition-all hover:bg-background active:scale-95"
+        >
+          <CloudRain size={16} className="text-blue-500" />
+          <span>{showWeather ? 'Hide Weather' : 'Show Weather'}</span>
+        </button>
+        
+        {showWeather && (
+          <div className="pointer-events-auto w-[340px] shadow-2xl rounded-2xl overflow-hidden transition-all duration-300 animate-in fade-in slide-in-from-top-2">
+            <WeatherForecastWidget
+              forecasts={weatherData}
+              variant="overlay"
+              maxItems={2}
+              locations={hoveredStateName ? [{ states: { state_name: hoveredStateName } }] : (selectedPPS ? [{ states: { state_name: selectedPPS.negeri } }] : [{ states: { state_name: 'Federal Territory of Kuala Lumpur' } }])}
+            />
+          </div>
+        )}
+      </div>
+
+      {/* Center on user location panel */}
+      <div className="absolute bottom-6 right-4 z-20 pointer-events-none origin-bottom-right scale-[0.7] md:scale-100">
+        <div className="pointer-events-auto bg-panel/95 backdrop-blur-md border border-border rounded-2xl p-4 shadow-2xl flex flex-col gap-2 min-w-[200px]">
+          <div className="flex items-center justify-between border-b border-border pb-2 mb-1">
+            <span className="text-xs uppercase font-bold tracking-widest text-foreground/60">Your Position</span>
+            <span className={`w-2 h-2 rounded-full ${location ? 'bg-emerald-500 animate-pulse' : error ? 'bg-red-500' : 'bg-amber-500'}`}></span>
+          </div>
+          <button
+            onClick={handleCenterOnUser}
+            disabled={!location}
+            className={`w-full flex items-center justify-center gap-2.5 px-4 py-2.5 rounded-xl border border-border/80 text-sm font-semibold transition-all duration-200 ${
+              location 
+                ? 'bg-background hover:bg-foreground/5 hover:scale-[1.02] active:scale-[0.98] cursor-pointer text-foreground shadow-sm' 
+                : 'bg-background/40 text-foreground/40 cursor-not-allowed'
+            }`}
+          >
+            <Navigation size={15} className={`shrink-0 ${location ? 'text-blue-500 fill-blue-500/20' : 'text-foreground/30'} transform -rotate-45`} />
+            <span>Recenter Map</span>
+          </button>
+          {error ? (
+            <p className="text-[10px] text-red-500/90 text-center mt-0.5 max-w-[170px] leading-tight">
+              {error}
+            </p>
+          ) : !location ? (
+            <p className="text-[10px] text-foreground/40 text-center mt-0.5">
+              Acquiring location signal...
+            </p>
+          ) : null}
         </div>
       </div>
 
