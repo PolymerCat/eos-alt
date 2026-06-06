@@ -16,7 +16,7 @@ export default async function TestUiReportsPage({
       title="Report Generation and Share Preview"
       description="Generate a public situation brief from the selected emergency data mode and download it as a PDF."
       mode={mode}
-      pathname="/test-ui/reports"
+      pathname="/reports"
     >
       <ReportBuilder snapshot={data} />
     </TestUiShell>
