@@ -19,7 +19,7 @@ export default async function TestUiSosPage({
       title="SOS Alert"
       description="Prototype for the SOS request flow: capture location, choose contact, review message, confirm send, and store status."
       mode={mode}
-      pathname="/test-ui/sos"
+      pathname="/sos"
     >
       <SosWorkspace
         contacts={data.emergencyContacts}
