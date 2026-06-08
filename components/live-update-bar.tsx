@@ -1,9 +1,24 @@
 "use client";
 
-import React from "react";
+import React, { useRef, useState, useEffect } from "react";
 import { WeatherAlert } from "@/types/emergency";
 
 export default function LiveUpdateBar({ alerts }: { alerts: WeatherAlert[] }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [duration, setDuration] = useState(30);
+
+  useEffect(() => {
+    if (containerRef.current) {
+      // Get the width of one instance of the content
+      const contentWidth = containerRef.current.scrollWidth;
+      // We want a constant speed of about 60 pixels per second.
+      // Duration (s) = Distance (px) / Speed (px/s)
+      const speed = 90;
+      const calculatedDuration = contentWidth / speed;
+      setDuration(Math.max(calculatedDuration, 10)); // Ensure a minimum duration
+    }
+  }, [alerts]);
+
   if (!alerts || alerts.length === 0) return null;
 
   const renderItems = () => (
@@ -27,8 +42,11 @@ export default function LiveUpdateBar({ alerts }: { alerts: WeatherAlert[] }) {
 
       <div className="flex-1 overflow-hidden whitespace-nowrap pl-[100px] sm:pl-[200px]">
         {/* We use double rendering for seamless looping */}
-        <div className="flex w-max animate-marquee hover:pause">
-          <div className="flex items-center justify-around min-w-[100vw]">
+        <div
+          className="flex w-max animate-marquee hover:pause"
+          style={{ animationDuration: `${duration}s` }}
+        >
+          <div ref={containerRef} className="flex items-center justify-around min-w-[100vw]">
             {renderItems()}
           </div>
           <div className="flex items-center justify-around min-w-[100vw]">
@@ -44,7 +62,7 @@ export default function LiveUpdateBar({ alerts }: { alerts: WeatherAlert[] }) {
           100% { transform: translateX(-50%); }
         }
         .animate-marquee {
-          animation: marquee 90s linear infinite;
+          animation: marquee 30s linear infinite; /* Fallback fallback duration */
         }
         .animate-marquee:hover {
           animation-play-state: paused;
