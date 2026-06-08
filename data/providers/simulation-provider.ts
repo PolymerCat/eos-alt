@@ -16,6 +16,8 @@ type SimulationLocationRow = {
   district: number;
   latitude: number;
   longitude: number;
+  label?: string | null;
+  description?: string | null;
   created_at?: string | null;
   states?: { state_name?: string | null } | { state_name?: string | null }[] | null;
   districts?: { district?: string | null } | { district?: string | null }[] | null;
@@ -78,7 +80,8 @@ export async function getSimulationEmergencyData(
         stateName: state?.state_name ?? "Unknown state",
         districtId: loc.district,
         districtName: district?.district ?? "Unknown district",
-        label: "Saved Location",
+        label: loc.label ?? district?.district ?? "Saved Location",
+        description: loc.description ?? undefined,
         latitude: loc.latitude,
         longitude: loc.longitude,
         createdAt: loc.created_at ?? new Date().toISOString(),

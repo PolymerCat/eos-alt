@@ -4,6 +4,50 @@ import { createClient } from "@/utils/supabase/server";
 import { revalidatePath } from "next/cache";
 import { normalizeDistrictName, getDistanceKm } from "@/utils/location";
 
+const LOCATION_LABEL_MAX_LENGTH = 60;
+const LOCATION_DESCRIPTION_MAX_LENGTH = 160;
+
+export interface SaveLocationInput {
+  label: string;
+  description?: string;
+  state: number;
+  district: number;
+  latitude: number;
+  longitude: number;
+}
+
+function normalizeLocationLabel(value: string): string {
+  return value.trim().replace(/\s+/g, " ");
+}
+
+function normalizeLocationDescription(value?: string): string | null {
+  const normalized = value?.trim().replace(/\s+/g, " ") ?? "";
+  return normalized.length > 0 ? normalized : null;
+}
+
+function validateLocationInput(input: SaveLocationInput): string | null {
+  const label = normalizeLocationLabel(input.label);
+  const description = normalizeLocationDescription(input.description);
+
+  if (!label) return "Location name is required.";
+  if (label.length > LOCATION_LABEL_MAX_LENGTH) {
+    return `Location name must be ${LOCATION_LABEL_MAX_LENGTH} characters or fewer.`;
+  }
+  if (description && description.length > LOCATION_DESCRIPTION_MAX_LENGTH) {
+    return `Description must be ${LOCATION_DESCRIPTION_MAX_LENGTH} characters or fewer.`;
+  }
+  if (!Number.isInteger(input.state) || input.state <= 0) return "State is required.";
+  if (!Number.isInteger(input.district) || input.district <= 0) return "District is required.";
+  if (!Number.isFinite(input.latitude) || input.latitude < -90 || input.latitude > 90) {
+    return "A valid latitude is required.";
+  }
+  if (!Number.isFinite(input.longitude) || input.longitude < -180 || input.longitude > 180) {
+    return "A valid longitude is required.";
+  }
+
+  return null;
+}
+
 // --- PROFILES ---
 
 export async function getProfile() {
@@ -103,6 +147,9 @@ export async function getUserLocations() {
       longitude,
       state,
       district,
+      label,
+      description,
+      created_at,
       states:state(state_name),
       districts:district(district)
     `)
@@ -149,6 +196,7 @@ export async function getNotifications() {
 
 async function checkEmergenciesAndAlertsForLocation(
   userId: string,
+  locationLabel: string,
   stateId: number,
   districtId: number,
   lat: number,
@@ -291,8 +339,8 @@ async function checkEmergenciesAndAlertsForLocation(
   for (const shelter of matchingShelters) {
     notificationsToInsert.push({
       user_id: userId,
-      title: `🚨 Emergency Shelter Opened Nearby`,
-      message: `The temporary shelter (PPS) "${shelter.name}" is active ${shelter.matchReason}. Current occupancy: ${shelter.victims} victims (${shelter.families} families).`,
+      title: `Emergency Shelter Opened Near ${locationLabel}`,
+      message: `The temporary shelter (PPS) "${shelter.name}" is active near ${locationLabel}: ${shelter.matchReason}. Current occupancy: ${shelter.victims} victims (${shelter.families} families).`,
       delivery_method: "in_app",
       status: "sent",
       sent_at: new Date().toISOString(),
@@ -303,8 +351,8 @@ async function checkEmergenciesAndAlertsForLocation(
     notificationsToInsert.push({
       user_id: userId,
       weather_alert_id: alert.id,
-      title: `⚠️ Weather Alert in Your Area`,
-      message: `A weather alert (${alert.severity}) has been detected ${alert.matchReason}: "${alert.title}". Details: ${alert.description || "No further details available."}`,
+      title: `Weather Alert Near ${locationLabel}`,
+      message: `A weather alert (${alert.severity}) has been detected near ${locationLabel}: ${alert.matchReason}. Alert: "${alert.title}". Details: ${alert.description || "No further details available."}`,
       delivery_method: "in_app",
       status: "sent",
       sent_at: new Date().toISOString(),
@@ -323,19 +371,27 @@ async function checkEmergenciesAndAlertsForLocation(
   }
 }
 
-export async function saveLocation(state: number, district: number, lat: number, lng: number) {
+export async function saveLocation(input: SaveLocationInput) {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) throw new Error("Unauthorized");
 
+  const validationError = validateLocationInput(input);
+  if (validationError) throw new Error(validationError);
+
+  const label = normalizeLocationLabel(input.label);
+  const description = normalizeLocationDescription(input.description);
+
   const { error } = await supabase.from("user_locations").insert({
     user_id: user.id,
-    state,
-    district,
-    latitude: lat,
-    longitude: lng,
+    state: input.state,
+    district: input.district,
+    latitude: input.latitude,
+    longitude: input.longitude,
+    label,
+    description,
   });
 
   if (error) {
@@ -345,7 +401,14 @@ export async function saveLocation(state: number, district: number, lat: number,
 
   // Trigger immediate check for matching emergencies & alerts
   try {
-    await checkEmergenciesAndAlertsForLocation(user.id, state, district, lat, lng);
+    await checkEmergenciesAndAlertsForLocation(
+      user.id,
+      label,
+      input.state,
+      input.district,
+      input.latitude,
+      input.longitude
+    );
   } catch (checkErr) {
     console.error("Error checking emergencies during saveLocation:", checkErr);
     // Do not throw or block the main location save if notification generation fails

@@ -6,6 +6,43 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
 import Link from "next/link";
 
+type RelationValue<T> = T | T[] | null | undefined;
+
+type DistrictOption = {
+  id: number;
+  district: string;
+};
+
+type SavedLocationRow = {
+  id: number;
+  label?: string | null;
+  description?: string | null;
+  latitude: number;
+  longitude: number;
+  states?: RelationValue<{ state_name?: string | null }>;
+  districts?: RelationValue<{ district?: string | null }>;
+};
+
+type NotificationRow = {
+  id: number | string;
+  title: string;
+  message: string;
+  created_at: string;
+};
+
+function firstRelationValue<T>(value: RelationValue<T>): T | undefined {
+  return Array.isArray(value) ? value[0] : value ?? undefined;
+}
+
+function getLocationLabel(location: SavedLocationRow): string {
+  const district = firstRelationValue(location.districts);
+  return location.label?.trim() || district?.district || "Saved Location";
+}
+
+function formatCoordinate(value: unknown): string {
+  const numericValue = Number(value);
+  return Number.isFinite(numericValue) ? numericValue.toFixed(4) : "unknown";
+}
 
 export default async function ProfilePage(props: { searchParams: Promise<{ tab?: string }> }) {
 
@@ -32,11 +69,11 @@ export default async function ProfilePage(props: { searchParams: Promise<{ tab?:
 
   const districtsResult = selectedStateId
     ? await getDistricts(selectedStateId)
-    : ([] as any);
+    : ([] as DistrictOption[]);
 
   const finalDistricts = Array.isArray(districtsResult)
     ? districtsResult
-    : (districtsResult as any)?.data || [];
+    : [];
 
   // 3. Render UI
   return (
@@ -100,12 +137,21 @@ export default async function ProfilePage(props: { searchParams: Promise<{ tab?:
               </div>
             ) : (
               <ul className="flex flex-col gap-3">
-                {locations.map((loc: any) => (
+                {(locations as SavedLocationRow[]).map((loc) => {
+                  const state = firstRelationValue(loc.states);
+                  const district = firstRelationValue(loc.districts);
+
+                  return (
                   <li key={loc.id} className="p-3 bg-background border border-border/50 rounded-lg flex flex-col gap-2">
                     <div className="flex justify-between items-start">
                       <div>
-                        <p className="font-semibold text-sm text-foreground">{loc.districts?.district}</p>
-                        <p className="text-xs text-foreground/60">{loc.states?.state_name}</p>
+                        <p className="font-semibold text-sm text-foreground">{getLocationLabel(loc)}</p>
+                        <p className="text-xs text-foreground/60">
+                          {district?.district}, {state?.state_name}
+                        </p>
+                        {loc.description ? (
+                          <p className="mt-1 text-xs leading-5 text-foreground/55">{loc.description}</p>
+                        ) : null}
                       </div>
                       <DeleteButton actionFunc={async () => {
                         "use server";
@@ -117,11 +163,12 @@ export default async function ProfilePage(props: { searchParams: Promise<{ tab?:
                       }} />
                     </div>
                     <div className="pt-2 border-t border-border/30 flex justify-between text-xs text-foreground/40">
-                      <span>Lat: {loc.latitude.toFixed(4)}</span>
-                      <span>Lng: {loc.longitude.toFixed(4)}</span>
+                      <span>Lat: {formatCoordinate(loc.latitude)}</span>
+                      <span>Lng: {formatCoordinate(loc.longitude)}</span>
                     </div>
                   </li>
-                ))}
+                  );
+                })}
               </ul>
             )}
           </section>
@@ -139,7 +186,7 @@ export default async function ProfilePage(props: { searchParams: Promise<{ tab?:
               </div>
             ) : (
               <ul className="flex flex-col gap-3 max-h-80 overflow-y-auto custom-scrollbar pr-2">
-                {notifications.map((notif: any) => (
+                {(notifications as NotificationRow[]).map((notif) => (
                   <li key={notif.id} className="p-3 bg-background border border-border/50 rounded-lg flex flex-col gap-1">
                     <p className="font-semibold text-sm text-foreground">{notif.title}</p>
                     <p className="text-xs text-foreground/80 line-clamp-3">{notif.message}</p>
