@@ -3,6 +3,7 @@ import { Inter, JetBrains_Mono } from "next/font/google";
 import { Toaster } from "sonner";
 import Link from "next/link";
 import AuthButton from "@/components/AuthButton";
+import OfflineBanner from "@/components/pwa/OfflineBanner";
 import "./globals.css";
 import { createClient } from "@/utils/supabase/server";
 //import 'maplibre-gl/dist/maplibre-gl.css';
@@ -65,6 +66,7 @@ export default async function RootLayout({
       <body
         className={`${inter.variable} ${jetbrainsMono.variable} antialiased bg-background text-foreground min-h-screen flex flex-col`}
       >
+        <OfflineBanner />
         <header className="border-b border-border bg-panel/90 backdrop-blur-sm sticky top-0 z-50">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex h-16 items-center justify-between">

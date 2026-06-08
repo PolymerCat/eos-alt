@@ -9,6 +9,7 @@ import { Home, MapPin } from "lucide-react";
 import LiveUpdateBar from "@/components/live-update-bar";
 import DataSyncButton from "@/components/DataSyncButton";
 import WeatherForecastWidget, { WeatherForecastLocation } from "@/components/weather-forecast-widget";
+import PublicEmergencySnapshotCache from "@/components/pwa/PublicEmergencySnapshotCache";
 import DetailsModal from "@/components/test-ui/DetailsModal";
 
 function toWeatherForecastLocations(savedLocations: SavedLocation[]): WeatherForecastLocation[] {
@@ -27,6 +28,13 @@ export default async function TestUiHubPage({
   const mode = normalizeDataMode(params.mode);
   const data = await getEmergencyData({ mode });
   const forecastLocations = toWeatherForecastLocations(data.savedLocations);
+  const publicEmergencySnapshot = {
+    cachedAt: new Date().toISOString(),
+    mode: "live" as const,
+    shelters: data.shelters,
+    weatherAlerts: data.weatherAlerts,
+    dataSources: data.dataSources,
+  };
 
   const isLive = mode === "live";
   const displayAlerts = data.weatherAlerts;
@@ -45,6 +53,7 @@ export default async function TestUiHubPage({
       mode={mode}
       pathname="/"
     >
+      <PublicEmergencySnapshotCache snapshot={publicEmergencySnapshot} />
       <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
         <StatCard label="Shelters" value={data.shelters.length} detail="Active or simulated PPS records" mode={mode} />
         <StatCard label="Weather" value={data.weatherAlerts.length} detail="Warning records available" mode={mode} />
