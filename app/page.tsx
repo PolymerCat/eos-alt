@@ -183,7 +183,7 @@ export default async function TestUiHubPage({
                         <div className="bg-panel/50 p-6 rounded-lg border border-border/50">
                           <h4 className="text-sm font-semibold text-foreground/70 uppercase tracking-wider mb-2">Affected Areas</h4>
                           <p className="text-base text-foreground mb-6">{alert.affectedArea}</p>
-                          
+
                           <h4 className="text-sm font-semibold text-foreground/70 uppercase tracking-wider mb-2">Description</h4>
                           <p className="text-lg leading-relaxed whitespace-pre-wrap">{alert.description}</p>
                         </div>

@@ -22,6 +22,7 @@ type JoinedUserLocation = {
   district?: number | null;
   label?: string | null;
   description?: string | null;
+  created_at?: string | null;
   states?: { state_name?: string } | Array<{ state_name?: string }> | null;
   districts?: { district?: string } | Array<{ district?: string }> | null;
 };
@@ -128,15 +129,15 @@ function mapUserLocations(rows: JoinedUserLocation[]): SavedLocation[] {
     return {
       id: row.id,
       userId: "current-user",
-      stateCode: 0,
+      stateCode: row.state ?? 0,
       stateName: state?.state_name ?? "Unknown state",
-      districtId: 0,
+      districtId: row.district ?? 0,
       districtName: district?.district ?? "Unknown district",
-      label: row.label ?? district?.district ?? "Saved location",
+      label: row.label ?? district?.district ?? "Saved Location",
       description: row.description ?? undefined,
       latitude: row.latitude,
       longitude: row.longitude,
-      createdAt: new Date().toISOString(),
+      createdAt: row.created_at ?? new Date().toISOString(),
     };
   });
 }

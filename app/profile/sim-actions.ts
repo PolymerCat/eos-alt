@@ -5,6 +5,50 @@ import { revalidatePath } from "next/cache";
 import { normalizeDistrictName, getDistanceKm } from "@/utils/location";
 import type { EmergencyScenario } from "@/types/emergency";
 
+const LOCATION_LABEL_MAX_LENGTH = 60;
+const LOCATION_DESCRIPTION_MAX_LENGTH = 160;
+
+export interface SaveSimulationLocationInput {
+  label: string;
+  description?: string;
+  state: number;
+  district: number;
+  latitude: number;
+  longitude: number;
+}
+
+function normalizeLocationLabel(value: string): string {
+  return value.trim().replace(/\s+/g, " ");
+}
+
+function normalizeLocationDescription(value?: string): string | null {
+  const normalized = value?.trim().replace(/\s+/g, " ") ?? "";
+  return normalized.length > 0 ? normalized : null;
+}
+
+function validateLocationInput(input: SaveSimulationLocationInput): string | null {
+  const label = normalizeLocationLabel(input.label);
+  const description = normalizeLocationDescription(input.description);
+
+  if (!label) return "Location name is required.";
+  if (label.length > LOCATION_LABEL_MAX_LENGTH) {
+    return `Location name must be ${LOCATION_LABEL_MAX_LENGTH} characters or fewer.`;
+  }
+  if (description && description.length > LOCATION_DESCRIPTION_MAX_LENGTH) {
+    return `Description must be ${LOCATION_DESCRIPTION_MAX_LENGTH} characters or fewer.`;
+  }
+  if (!Number.isInteger(input.state) || input.state <= 0) return "State is required.";
+  if (!Number.isInteger(input.district) || input.district <= 0) return "District is required.";
+  if (!Number.isFinite(input.latitude) || input.latitude < -90 || input.latitude > 90) {
+    return "A valid latitude is required.";
+  }
+  if (!Number.isFinite(input.longitude) || input.longitude < -180 || input.longitude > 180) {
+    return "A valid longitude is required.";
+  }
+
+  return null;
+}
+
 // --- SIMULATION SCENARIOS ---
 
 export async function uploadSimulationScenario(name: string, data: EmergencyScenario) {
@@ -126,6 +170,9 @@ export async function getSimulationUserLocations() {
       longitude,
       state,
       district,
+      label,
+      description,
+      created_at,
       states:state(state_name),
       districts:district(district)
     `)
@@ -151,17 +198,25 @@ export async function getSimulationUserLocations() {
   return normalized;
 }
 
-export async function saveSimulationLocation(state: number, district: number, lat: number, lng: number) {
+export async function saveSimulationLocation(input: SaveSimulationLocationInput) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("Unauthorized");
 
+  const validationError = validateLocationInput(input);
+  if (validationError) throw new Error(validationError);
+
+  const label = normalizeLocationLabel(input.label);
+  const description = normalizeLocationDescription(input.description);
+
   const { error } = await supabase.from("simulation_user_locations").insert({
     user_id: user.id,
-    state,
-    district,
-    latitude: lat,
-    longitude: lng,
+    state: input.state,
+    district: input.district,
+    latitude: input.latitude,
+    longitude: input.longitude,
+    label,
+    description,
   });
 
   if (error) {
@@ -170,7 +225,14 @@ export async function saveSimulationLocation(state: number, district: number, la
   }
 
   try {
-    await checkSimulationEmergenciesAndAlertsForLocation(user.id, state, district, lat, lng);
+    await checkSimulationEmergenciesAndAlertsForLocation(
+      user.id,
+      label,
+      input.state,
+      input.district,
+      input.latitude,
+      input.longitude
+    );
   } catch (checkErr) {
     console.error("Error checking simulation emergencies:", checkErr);
   }
@@ -217,6 +279,7 @@ export async function getSimulationNotifications() {
 
 async function checkSimulationEmergenciesAndAlertsForLocation(
   userId: string,
+  locationLabel: string,
   stateId: number,
   districtId: number,
   lat: number,
@@ -299,8 +362,8 @@ async function checkSimulationEmergenciesAndAlertsForLocation(
   for (const shelter of matchingShelters) {
     notificationsToInsert.push({
       user_id: userId,
-      title: `🚨 SIMULATION: Shelter Opened Nearby`,
-      message: `The temporary shelter (PPS) "${shelter.name}" is active ${shelter.matchReason}. Current occupancy: ${shelter.mangsa} victims (${shelter.keluarga} families).`,
+      title: `SIMULATION: Shelter Opened Near ${locationLabel}`,
+      message: `The temporary shelter (PPS) "${shelter.name}" is active near ${locationLabel}: ${shelter.matchReason}. Current occupancy: ${shelter.mangsa} victims (${shelter.keluarga} families).`,
       delivery_method: "in_app",
       status: "sent",
       sent_at: new Date().toISOString(),
@@ -311,8 +374,8 @@ async function checkSimulationEmergenciesAndAlertsForLocation(
     notificationsToInsert.push({
       user_id: userId,
       weather_alert_id: alert.id,
-      title: `⚠️ SIMULATION: Weather Alert`,
-      message: `A weather alert (${alert.severity}) has been detected ${alert.matchReason}: "${alert.title}". Details: ${alert.description || "No further details available."}`,
+      title: `SIMULATION: Weather Alert Near ${locationLabel}`,
+      message: `A weather alert (${alert.severity}) has been detected near ${locationLabel}: ${alert.matchReason}. Alert: "${alert.title}". Details: ${alert.description || "No further details available."}`,
       delivery_method: "in_app",
       status: "sent",
       sent_at: new Date().toISOString(),
@@ -351,6 +414,7 @@ async function wipeAndRegenerateNotifications(userId: string) {
     for (const loc of locations) {
       await checkSimulationEmergenciesAndAlertsForLocation(
         userId,
+        loc.label?.trim() || "Saved Location",
         loc.state,
         loc.district,
         loc.latitude,

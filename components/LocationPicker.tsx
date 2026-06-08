@@ -19,6 +19,9 @@ interface District {
   district: string;
 }
 
+const LOCATION_LABEL_MAX_LENGTH = 60;
+const LOCATION_DESCRIPTION_MAX_LENGTH = 160;
+
 export default function LocationPicker({
   states,
   initialDistricts = [],
@@ -38,6 +41,8 @@ export default function LocationPicker({
   const [selectedState, setSelectedState] = useState<number | "">("");
   const [selectedDistrict, setSelectedDistrict] = useState<number | "">("");
   const [coordinates, setCoordinates] = useState<{ lat: number; lng: number } | null>(null);
+  const [locationLabel, setLocationLabel] = useState("");
+  const [locationDescription, setLocationDescription] = useState("");
 
   // Filter districts based on selected state
   // const availableDistricts = selectedState
@@ -137,24 +142,34 @@ export default function LocationPicker({
   };
 
   const handleSave = async () => {
-    if (!selectedState || !selectedDistrict || !coordinates) return;
+    const label = locationLabel.trim();
+    const description = locationDescription.trim();
+
+    if (!label || !selectedState || !selectedDistrict || !coordinates) return;
+
     try {
       if (isSimulation) {
-        await saveSimulationLocation(
-          Number(selectedState),
-          Number(selectedDistrict),
-          coordinates.lat,
-          coordinates.lng
-        );
+        await saveSimulationLocation({
+          label,
+          description,
+          state: Number(selectedState),
+          district: Number(selectedDistrict),
+          latitude: coordinates.lat,
+          longitude: coordinates.lng,
+        });
       } else {
-        await saveLocation(
-          Number(selectedState),
-          Number(selectedDistrict),
-          coordinates.lat,
-          coordinates.lng
-        );
+        await saveLocation({
+          label,
+          description,
+          state: Number(selectedState),
+          district: Number(selectedDistrict),
+          latitude: coordinates.lat,
+          longitude: coordinates.lng,
+        });
       }
       // Reset after save
+      setLocationLabel("");
+      setLocationDescription("");
       setSelectedState("");
       setSelectedDistrict("");
       setCoordinates(null);
@@ -163,7 +178,7 @@ export default function LocationPicker({
         marker.current = null;
       }
       toast.success("Location Saved", {
-        description: "Your location has been saved."
+        description: `${label} has been saved.`
       });
     } catch (err) {
       console.error(err);
@@ -198,6 +213,40 @@ export default function LocationPicker({
   return (
     <div className="flex flex-col gap-6 w-full h-full min-h-[500px]">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="flex flex-col gap-1">
+          <label className="text-sm font-medium text-foreground/70" htmlFor="location-label">
+            Location Name
+          </label>
+          <input
+            id="location-label"
+            value={locationLabel}
+            onChange={(e) => setLocationLabel(e.target.value)}
+            maxLength={LOCATION_LABEL_MAX_LENGTH}
+            placeholder="Family Home, Office, Mama's Home"
+            className="rounded-md px-4 py-2 bg-background border border-border text-foreground font-medium focus:outline-none focus:border-accent"
+          />
+          <span className="text-[11px] text-foreground/45">
+            {locationLabel.length}/{LOCATION_LABEL_MAX_LENGTH}
+          </span>
+        </div>
+
+        <div className="flex flex-col gap-1">
+          <label className="text-sm font-medium text-foreground/70" htmlFor="location-description">
+            Description
+          </label>
+          <input
+            id="location-description"
+            value={locationDescription}
+            onChange={(e) => setLocationDescription(e.target.value)}
+            maxLength={LOCATION_DESCRIPTION_MAX_LENGTH}
+            placeholder="Optional note for this saved place"
+            className="rounded-md px-4 py-2 bg-background border border-border text-foreground font-medium focus:outline-none focus:border-accent"
+          />
+          <span className="text-[11px] text-foreground/45">
+            Optional - {locationDescription.length}/{LOCATION_DESCRIPTION_MAX_LENGTH}
+          </span>
+        </div>
+
         <div className="flex flex-col gap-1">
           <label className="text-sm font-medium text-foreground/70">State</label>
           <select
@@ -252,7 +301,7 @@ export default function LocationPicker({
         </div>
         <button
           onClick={handleSave}
-          disabled={!selectedState || !selectedDistrict || !coordinates}
+          disabled={!locationLabel.trim() || !selectedState || !selectedDistrict || !coordinates}
           className="bg-accent text-accent-foreground font-medium rounded-md py-2 px-6 text-sm hover:bg-accent/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Save Location
