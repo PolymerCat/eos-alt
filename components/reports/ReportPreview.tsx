@@ -97,6 +97,9 @@ export default function ReportPreview({ report }: ReportPreviewProps) {
                           <p className="mt-1 text-sm text-foreground/60">
                             {shelter.state} / {shelter.district}
                           </p>
+                          <p className="mt-2 text-xs font-semibold text-foreground/70">
+                            Emergency: {shelter.disasterType}
+                          </p>
                           <p className="mt-2 text-xs font-medium text-foreground/50">
                             {shelter.latitude}, {shelter.longitude}
                           </p>

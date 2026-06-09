@@ -29,9 +29,11 @@ type JoinedUserLocation = {
 
 type ShelterSnapshotRow = {
   shelter_id: string;
+  disaster_type: string | null;
   capacity: string | null;
   victims: string | null;
   families: string | null;
+  captured_at: string;
   shelters: {
     id: string;
     name: string;
@@ -153,11 +155,14 @@ function mapSnapshotToShelter(row: ShelterSnapshotRow): PPS | null {
     negeri: s.state,
     daerah: s.district,
     mukim: s.mukim ?? "",
-    bencana: s.disaster_type ?? "",
+    bencana: row.disaster_type ?? s.disaster_type ?? "",
+    disasterType: row.disaster_type ?? s.disaster_type ?? null,
     mangsa: row.victims ?? "0",
     keluarga: row.families ?? "0",
     kapasiti: row.capacity ?? "0.00%",
     status: "online",
+    operationalStatus: "active",
+    lastUpdatedAt: row.captured_at,
   };
 }
 
@@ -170,11 +175,15 @@ function mapShelterRowToOfflineShelter(row: ShelterRow): PPS {
     negeri: row.state,
     daerah: row.district,
     mukim: row.mukim ?? "",
-    bencana: row.disaster_type ?? "",
+    // A permanent shelter row may retain a legacy disaster value. Inactive
+    // shelters must not present that historical emergency as current.
+    bencana: "",
+    disasterType: null,
     mangsa: "0",
     keluarga: "0",
     kapasiti: "0.00%",
     status: "offline",
+    operationalStatus: "inactive",
   };
 }
 
@@ -278,9 +287,11 @@ export async function getLiveEmergencyData(): Promise<EmergencyDataSnapshot> {
       .from("shelter_snapshots")
       .select(`
         shelter_id,
+        disaster_type,
         capacity,
         victims,
         families,
+        captured_at,
         shelters (
           id, name, latitude, longitude,
           state, district, mukim, disaster_type

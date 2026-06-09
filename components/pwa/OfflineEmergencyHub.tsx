@@ -6,6 +6,7 @@ import { AlertTriangle, CloudRain, Database, Home, MapPin, RefreshCw } from "luc
 import { readPublicEmergencySnapshot } from "@/lib/pwa/emergency-snapshot-cache";
 import { networkStatusStore } from "@/lib/pwa/network-status";
 import type { PublicEmergencySnapshot } from "@/types/pwa";
+import DisasterBadge from "@/components/shelters/DisasterBadge";
 
 function formatCachedAt(value: string): string {
   return new Intl.DateTimeFormat("en-MY", {
@@ -118,6 +119,9 @@ export default function OfflineEmergencyHub() {
                   <p className="mt-1 text-sm text-foreground/60">
                     {shelter.daerah}, {shelter.negeri}
                   </p>
+                  <div className="mt-3">
+                    <DisasterBadge shelter={shelter} />
+                  </div>
                   <div className="mt-3 flex items-center justify-between text-xs text-foreground/55">
                     <span>{shelter.mangsa} victims</span>
                     <span>{shelter.kapasiti} capacity</span>

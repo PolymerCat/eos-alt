@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { PPS } from '@/app/actions';
+import DisasterBadge from "@/components/shelters/DisasterBadge";
 
 /**
  * Props for the MapPopup component
@@ -19,15 +20,6 @@ interface MapPopupProps {
  * Tailwind CSS, and complex logic easily compared to raw HTML strings.
  */
 export default function MapPopup({ pps }: MapPopupProps) {
-  
-  /**
-   * Example handler for an action inside the popup
-   */
-  const handleViewDetails = () => {
-    console.log(`Viewing details for: ${pps.name}`);
-    // You could trigger a sidebar change or navigate to a details page here
-  };
-
   return (
     <div className="p-3 min-w-[240px] font-sans text-slate-800">
       {/* Header Section */}
@@ -52,11 +44,9 @@ export default function MapPopup({ pps }: MapPopupProps) {
         </div>
         <div className="bg-slate-50 p-2 rounded-lg border border-slate-100 text-center">
           <span className="block text-[9px] uppercase tracking-wider font-semibold text-slate-400 mb-0.5">
-            Type
+            Emergency
           </span>
-          <span className="text-xs font-bold text-slate-700 uppercase">
-            Shelter
-          </span>
+          <DisasterBadge shelter={pps} className="mt-1 justify-center" />
         </div>
       </div>
 

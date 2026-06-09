@@ -4,6 +4,7 @@ import { createClient } from "@/utils/supabase/server";
 import { revalidatePath } from "next/cache";
 import { normalizeDistrictName, getDistanceKm } from "@/utils/location";
 import type { EmergencyScenario } from "@/types/emergency";
+import { getDisasterPresentation } from "@/lib/shelters/disaster";
 
 const LOCATION_LABEL_MAX_LENGTH = 60;
 const LOCATION_DESCRIPTION_MAX_LENGTH = 160;
@@ -360,10 +361,12 @@ async function checkSimulationEmergenciesAndAlertsForLocation(
   const notificationsToInsert = [];
 
   for (const shelter of matchingShelters) {
+    const rawDisaster = shelter.disasterType?.trim() || shelter.bencana?.trim();
+    const disasterLabel = getDisasterPresentation(rawDisaster).label;
     notificationsToInsert.push({
       user_id: userId,
-      title: `SIMULATION: Shelter Opened Near ${locationLabel}`,
-      message: `The temporary shelter (PPS) "${shelter.name}" is active near ${locationLabel}: ${shelter.matchReason}. Current occupancy: ${shelter.mangsa} victims (${shelter.keluarga} families).`,
+      title: `SIMULATION: ${rawDisaster ? `${disasterLabel} Shelter` : "Emergency Shelter"} Opened Near ${locationLabel}`,
+      message: `The temporary shelter (PPS) "${shelter.name}" is active${rawDisaster ? ` for ${disasterLabel}` : ""} near ${locationLabel}: ${shelter.matchReason}. Current occupancy: ${shelter.mangsa} victims (${shelter.keluarga} families).`,
       delivery_method: "in_app",
       status: "sent",
       sent_at: new Date().toISOString(),

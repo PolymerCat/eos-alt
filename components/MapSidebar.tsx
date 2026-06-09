@@ -1,6 +1,7 @@
 import React from 'react';
 import { PPS } from '@/app/actions';
 import DataSyncButton from '@/components/DataSyncButton';
+import DisasterBadge from "@/components/shelters/DisasterBadge";
 
 interface MapSidebarProps {
   ppsData: PPS[];
@@ -44,9 +45,7 @@ export default function MapSidebar({ ppsData, isOpen, onClose, onShelterClick }:
             </div>
             
             <div className="flex items-center justify-between mt-1">
-              <span className="text-xs font-medium bg-red-600/10 text-red-600 dark:text-red-400 px-2 py-0.5 rounded-md border border-red-600/20">
-                {pps.bencana}
-              </span>
+              <DisasterBadge shelter={pps} />
               <span className="text-xs text-foreground/70 bg-foreground/5 px-2 py-0.5 rounded-md border border-border/50">
                 Capacity: <span className="font-semibold">{pps.kapasiti}</span>
               </span>

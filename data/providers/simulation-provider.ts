@@ -8,6 +8,7 @@ import type {
   SavedLocation,
 } from "@/types/emergency";
 import { getActiveSimulationScenario, getSimulationUserLocations, getSimulationNotifications } from "@/app/profile/sim-actions";
+import type { PPS } from "@/app/actions";
 
 type SimulationLocationRow = {
   id: number;
@@ -46,6 +47,16 @@ function toDeliveryMethod(value: string): DeliveryMethod {
 function toDeliveryStatus(value: string): DeliveryStatus {
   if (value === "failed" || value === "skipped" || value === "pending") return value;
   return "sent";
+}
+
+function normalizeSimulationShelter(shelter: PPS): PPS {
+  const isInactive = shelter.status === "offline" || shelter.operationalStatus === "inactive";
+  return {
+    ...shelter,
+    disasterType: isInactive ? null : shelter.disasterType ?? shelter.bencana ?? null,
+    operationalStatus: isInactive ? "inactive" : "active",
+    status: isInactive ? "offline" : shelter.status || "online",
+  };
 }
 
 export async function getSimulationEmergencyData(
@@ -105,7 +116,7 @@ export async function getSimulationEmergencyData(
   return {
     mode: "simulation",
     scenarioName: scenario.name,
-    shelters: scenario.shelters || [],
+    shelters: (scenario.shelters || []).map(normalizeSimulationShelter),
     weatherForecasts: scenario.weatherForecasts || [],
     weatherAlerts: scenario.weatherAlerts || [],
     savedLocations: dbLocations.length > 0 ? dbLocations : (scenario.savedLocations || []),

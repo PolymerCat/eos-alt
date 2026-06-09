@@ -64,6 +64,22 @@ They are only switched at the marker/list rendering boundary.
 - State hover counts show saved-location counts
 - Selected detail card shows label, district/state, description, coordinates
 
+### Side-Panel Selection
+
+Selecting a shelter or saved location from the side panel:
+
+```txt
+selects the record
+flies the map to its coordinates
+closes any other open popup
+automatically opens the selected marker popup
+```
+
+The implementation uses `marker.togglePopup()` rather than calling
+`popup.addTo(map)` directly. MapLibre assigns an attached popup its marker
+coordinates during the marker toggle operation, making this the reliable way
+to open marker-owned popups programmatically.
+
 ## Files Changed
 
 ```txt

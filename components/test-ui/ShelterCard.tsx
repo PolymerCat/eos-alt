@@ -1,5 +1,6 @@
 import type { PPS } from "@/app/actions";
 import StatusBadge from "./StatusBadge";
+import DisasterBadge from "@/components/shelters/DisasterBadge";
 
 function getCapacityLabel(capacity: string) {
   const value = Number.parseFloat(capacity);
@@ -40,6 +41,10 @@ export default function ShelterCard({
           </p>
         </div>
         <StatusBadge label={capacity.label} severity={capacity.severity} />
+      </div>
+
+      <div className="mt-3">
+        <DisasterBadge shelter={shelter} />
       </div>
 
       <div className="mt-4 grid grid-cols-3 gap-3 text-sm">

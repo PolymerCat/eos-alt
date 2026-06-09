@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import maplibregl from 'maplibre-gl';
 import { PPS } from '@/app/actions';
+import { getShelterDisasterPresentation } from "@/lib/shelters/disaster";
 
 interface MapMarkersLayerProps {
   map: maplibregl.Map;
@@ -25,7 +26,7 @@ export default function MapMarkersLayer({ map, ppsData }: MapMarkersLayerProps) 
           daerah: alert.daerah,
           mangsa: alert.mangsa,
           kapasiti: alert.kapasiti,
-          bencana: alert.bencana,
+          disasterLabel: getShelterDisasterPresentation(alert).label,
           latti: alert.latti,
           longi: alert.longi
         }
@@ -142,7 +143,7 @@ export default function MapMarkersLayer({ map, ppsData }: MapMarkersLayerProps) 
           
           <div class="mt-2 flex items-center justify-between">
             <span class="text-[10px] font-medium bg-red-100 text-red-600 px-2 py-0.5 rounded border border-red-200">
-              ${props?.bencana}
+              ${props?.disasterLabel}
             </span>
             <a 
               href="https://www.google.com/maps/dir/?api=1&destination=${props?.latti},${props?.longi}"

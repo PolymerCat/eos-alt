@@ -4,6 +4,7 @@ import type { SavedLocation } from "@/types/emergency";
 import { createClient } from "@/utils/supabase/server";
 import LiveUpdateBar from "@/components/live-update-bar";
 import WeatherForecastWidget, { WeatherForecastLocation } from "@/components/weather-forecast-widget";
+import DisasterBadge from "@/components/shelters/DisasterBadge";
 
 function toWeatherForecastLocations(savedLocations: SavedLocation[]): WeatherForecastLocation[] {
   return savedLocations.map((location) => ({
@@ -83,6 +84,10 @@ export default async function Home() {
                         <span>Capacity:</span>
                         <span className="text-foreground font-semibold text-sm">{center.kapasiti}</span>
                       </div>
+                    </div>
+
+                    <div className="mt-3">
+                      <DisasterBadge shelter={center} />
                     </div>
 
                     <div className="mt-4 pt-2 border-t border-border/30 text-xs text-foreground/40 flex flex-col gap-2">

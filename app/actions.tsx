@@ -29,10 +29,16 @@ export interface PPS {
     daerah: string;
     mukim: string;
     bencana: string;
+    /** Event-specific emergency type. Prefer this over the legacy bencana field. */
+    disasterType?: string | null;
     mangsa: string;
     keluarga: string;
     kapasiti: string;
     status: string;
+    /** Explicit shelter activation state. Legacy status remains for compatibility. */
+    operationalStatus?: "active" | "inactive" | "unknown";
+    /** Timestamp of the latest activation snapshot when available. */
+    lastUpdatedAt?: string;
 }
 
 export interface WeatherForecast {
@@ -135,10 +141,12 @@ export async function getAlerts(): Promise<PPS[]> {
                 daerah: asText(item.daerah),
                 mukim: asText(item.mukim),
                 bencana: asText(item.bencana),
+                disasterType: asText(item.bencana) || null,
                 mangsa: asText(item.jumlah_mangsa ?? item.mangsa),
                 keluarga: asText(item.jumlah_keluarga ?? item.keluarga),
                 kapasiti: asPercent(item.kapasiti_maksimum ?? item.kapasiti),
-                status: asText(item.status),
+                status: asText(item.status, "online"),
+                operationalStatus: "active",
             };
         });
 

@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { PPS } from '@/app/actions';
 import type { SavedLocation } from '@/types/emergency';
 import ShelterCard from './shelter-card.test';
+import DisasterBadge from "@/components/shelters/DisasterBadge";
 
 export type TestMapLayer = "shelters" | "saved_locations";
 
@@ -168,6 +169,7 @@ export default function SidebarTest({
           {mapLayer === "shelters" && selectedPPS ? (
             <div className="space-y-1 text-sm text-foreground/80">
               <p><span className="font-semibold">Name:</span> {selectedPPS.name}</p>
+              <div className="py-1"><DisasterBadge shelter={selectedPPS} /></div>
               <p>
                 <span className="font-semibold">Status:</span>{" "}
                 <span className={selectedPPS.status === "offline" ? "text-slate-500" : "text-emerald-600"}>

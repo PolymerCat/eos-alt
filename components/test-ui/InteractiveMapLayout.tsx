@@ -10,6 +10,7 @@ import ShelterCard from "./ShelterCard";
 import StatCard from "./StatCard";
 import Marker from "../tests/Marker.test";
 import MapPopup from "../tests/MapPopup";
+import DisasterBadge from "@/components/shelters/DisasterBadge";
 
 interface InteractiveMapLayoutProps {
   shelters: PPS[];
@@ -240,6 +241,9 @@ export default function InteractiveMapLayout({
               <p className="mt-1 text-sm text-foreground/60">
                 {selectedShelter.daerah}, {selectedShelter.negeri}
               </p>
+              <div className="mt-3">
+                <DisasterBadge shelter={selectedShelter} />
+              </div>
               <div className="mt-4 grid grid-cols-3 gap-3 text-sm">
                 <div>
                   <p className="text-xs text-foreground/50">Victims</p>

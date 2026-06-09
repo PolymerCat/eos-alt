@@ -2,6 +2,8 @@ import React from 'react';
 import { MapPin, Navigation } from "lucide-react";
 import { PPS } from '@/app/actions';
 import { cn } from "@/utils/tw-utils";
+import DisasterBadge from "@/components/shelters/DisasterBadge";
+import { getShelterDisasterPresentation } from "@/lib/shelters/disaster";
 
 interface CardProps {
   ppsData: PPS;
@@ -48,12 +50,13 @@ export default function ShelterCard({ ppsData, selectedShelter, onShelterClick }
   const label = capacityLabels[status];
   const shelterStatus = ppsData.status ?? "online";
   const isOnline = shelterStatus === "online";
+  const disaster = getShelterDisasterPresentation(ppsData);
 
   return (
     <button
       onClick={() => onShelterClick(ppsData)}
       aria-pressed={selectedShelter}
-      aria-label={`${ppsData.name}, ${ppsData.daerah}, ${ppsData.negeri}. ${isOnline ? "Online" : "Offline"}. Capacity ${ppsData.kapasiti}. ${label}.`}
+      aria-label={`${ppsData.name}, ${ppsData.daerah}, ${ppsData.negeri}. ${disaster.label}. ${isOnline ? "Online" : "Offline"}. Capacity ${ppsData.kapasiti}. ${label}.`}
       className={cn(
         "w-full text-left px-4 py-3.5 transition-colors duration-150 border-b border-border",
         "hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset",
@@ -100,6 +103,10 @@ export default function ShelterCard({ ppsData, selectedShelter, onShelterClick }
         <span>
           {ppsData.daerah}, {ppsData.negeri}
         </span>
+      </div>
+
+      <div className="mb-2.5">
+        <DisasterBadge shelter={ppsData} />
       </div>
 
       {/* Capacity bar */}

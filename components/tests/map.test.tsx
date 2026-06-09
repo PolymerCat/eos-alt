@@ -312,6 +312,28 @@ export default function TestMap({ ppsData, savedLocations, weatherData = [] }: M
     }
   };
 
+  /**
+   * Opens the popup attached to a selected marker and closes every other popup.
+   *
+   * MapLibre assigns an attached popup its marker coordinates through
+   * marker.togglePopup(). Calling popup.addTo(map) directly can leave the popup
+   * without a position, which is why side-panel selections previously focused
+   * the map without reliably showing their popup.
+   */
+  const openMarkerPopup = (markerId: string) => {
+    Object.entries(markersRef.current).forEach(([id, marker]) => {
+      const popup = marker.getPopup();
+      if (!popup) return;
+
+      if (id === markerId) {
+        if (!popup.isOpen()) marker.togglePopup();
+        return;
+      }
+
+      if (popup.isOpen()) popup.remove();
+    });
+  };
+
   // Handle markers when map is loaded, data changes, or the visible layer changes.
   useEffect(() => {
     if (!mapLoaded || !map.current) return;
@@ -408,24 +430,8 @@ export default function TestMap({ ppsData, savedLocations, weatherData = [] }: M
         essential: true, // this animation is considered essential with respect to prefers-reduced-motion
       });
 
-      // Close all other popups
-      Object.entries(markersRef.current).forEach(([id, marker]) => {
-        if (id !== pps.id) {
-          const popup = marker.getPopup();
-          if (popup && popup.isOpen()) {
-            popup.remove();
-          }
-        }
-      });
-
       if (fromSidebar) {
-        const marker = markersRef.current[pps.id];
-        if (marker) {
-          const popup = marker.getPopup();
-          if (popup && !popup.isOpen()) {
-            popup.addTo(map.current);
-          }
-        }
+        openMarkerPopup(pps.id);
       }
     }
   };
@@ -444,23 +450,8 @@ export default function TestMap({ ppsData, savedLocations, weatherData = [] }: M
         essential: true,
       });
 
-      Object.entries(markersRef.current).forEach(([id, marker]) => {
-        if (id !== `saved-${savedLocation.id}`) {
-          const popup = marker.getPopup();
-          if (popup && popup.isOpen()) {
-            popup.remove();
-          }
-        }
-      });
-
       if (fromSidebar) {
-        const marker = markersRef.current[`saved-${savedLocation.id}`];
-        if (marker) {
-          const popup = marker.getPopup();
-          if (popup && !popup.isOpen()) {
-            popup.addTo(map.current);
-          }
-        }
+        openMarkerPopup(`saved-${savedLocation.id}`);
       }
     }
   };

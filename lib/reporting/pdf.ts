@@ -132,7 +132,7 @@ export function createReportPdfBlob(report: GeneratedReport): Blob {
       report.onlineShelters.forEach((shelter) =>
         pushWrappedBullet(
           commands,
-          `${shelter.name} | ${shelter.state} / ${shelter.district} | ${shelter.latitude}, ${shelter.longitude}`,
+          `${shelter.name} | Emergency: ${shelter.disasterType} | ${shelter.state} / ${shelter.district} | ${shelter.latitude}, ${shelter.longitude}`,
           cursor
         )
       );

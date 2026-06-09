@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/utils/supabase/server";
+import { getDisasterPresentation } from "@/lib/shelters/disaster";
 import { revalidatePath } from "next/cache";
 import { normalizeDistrictName, getDistanceKm } from "@/utils/location";
 
@@ -230,15 +231,18 @@ async function checkEmergenciesAndAlertsForLocation(
     .from("shelter_snapshots")
     .select(`
       shelter_id,
+      disaster_type,
       capacity,
       victims,
       families,
+      captured_at,
       shelters (
         id, name, latitude, longitude,
         state, district, mukim, disaster_type
       )
     `)
-    .eq("status", "active");
+    .eq("status", "active")
+    .order("captured_at", { ascending: false });
 
   if (snapshotError) {
     console.error("Error fetching active snapshots for check:", snapshotError);
@@ -262,7 +266,8 @@ async function checkEmergenciesAndAlertsForLocation(
           state: s.state,
           district: s.district,
           mukim: s.mukim,
-          disaster_type: s.disaster_type,
+          disaster_type: row.disaster_type ?? s.disaster_type,
+          captured_at: row.captured_at,
           victims: row.victims ?? "0",
           families: row.families ?? "0",
           capacity: row.capacity ?? "0.00%",
@@ -337,10 +342,12 @@ async function checkEmergenciesAndAlertsForLocation(
   const notificationsToInsert = [];
 
   for (const shelter of matchingShelters) {
+    const disasterLabel = getDisasterPresentation(shelter.disaster_type).label;
+    const hasKnownDisaster = Boolean(shelter.disaster_type?.trim());
     notificationsToInsert.push({
       user_id: userId,
-      title: `Emergency Shelter Opened Near ${locationLabel}`,
-      message: `The temporary shelter (PPS) "${shelter.name}" is active near ${locationLabel}: ${shelter.matchReason}. Current occupancy: ${shelter.victims} victims (${shelter.families} families).`,
+      title: `${hasKnownDisaster ? `${disasterLabel} Shelter` : "Emergency Shelter"} Opened Near ${locationLabel}`,
+      message: `The temporary shelter (PPS) "${shelter.name}" is active${hasKnownDisaster ? ` for ${disasterLabel}` : ""} near ${locationLabel}: ${shelter.matchReason}. Current occupancy: ${shelter.victims} victims (${shelter.families} families).`,
       delivery_method: "in_app",
       status: "sent",
       sent_at: new Date().toISOString(),

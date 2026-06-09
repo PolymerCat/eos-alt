@@ -3,6 +3,7 @@ import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import AdminStatusPill from "@/components/admin/AdminStatusPill";
 import StatCard from "@/components/test-ui/StatCard";
 import { getEmergencyData } from "@/data/providers/emergency-data-provider";
+import DisasterBadge from "@/components/shelters/DisasterBadge";
 
 const SHELTER_RENDER_LIMIT = 120;
 
@@ -55,6 +56,9 @@ export default async function AdminSheltersPage() {
                       <p className="mt-2 text-xs font-medium text-foreground/45">
                         {shelter.latti}, {shelter.longi}
                       </p>
+                      <div className="mt-3">
+                        <DisasterBadge shelter={shelter} />
+                      </div>
                     </div>
                     <AdminStatusPill label={isOnline ? "online" : "offline"} tone={isOnline ? "green" : "gray"} />
                   </div>

@@ -29,6 +29,7 @@ export interface GeneratedReportShelter {
   district: string;
   latitude: string;
   longitude: string;
+  disasterType: string;
 }
 
 export interface GeneratedReport {

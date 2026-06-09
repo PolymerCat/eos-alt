@@ -1,6 +1,7 @@
 import type { PPS } from "@/app/actions";
 import type { EmergencyDataSnapshot, WeatherAlert } from "@/types/emergency";
 import type { GeneratedReport, GeneratedReportShelter, ReportGenerationInput } from "@/types/reporting";
+import { getShelterDisasterPresentation } from "@/lib/shelters/disaster";
 
 const HIGH_CAPACITY_THRESHOLD = 80;
 const CRITICAL_SEVERITIES = new Set<WeatherAlert["severity"]>(["critical", "warning"]);
@@ -39,6 +40,7 @@ function mapOnlineShelters(shelters: PPS[]): GeneratedReportShelter[] {
       district: shelter.daerah,
       latitude: shelter.latti,
       longitude: shelter.longi,
+      disasterType: getShelterDisasterPresentation(shelter).label,
     }));
 }
 

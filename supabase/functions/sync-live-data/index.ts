@@ -76,6 +76,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
   // ── 1. Fetch + upsert JKM shelters ──────────────────────────
   try {
     const shelters = await fetchJkmShelters();
+    const shelterCapturedAt = new Date().toISOString();
 
     if (shelters.length > 0) {
       // Upsert identity rows (stable fields only)
@@ -87,7 +88,6 @@ Deno.serve(async (req: Request): Promise<Response> => {
         state: s.state,
         district: s.district,
         mukim: s.mukim,
-        disaster_type: s.disaster_type,
       }));
 
       const { error: shelterError } = await supabase
@@ -100,15 +100,17 @@ Deno.serve(async (req: Request): Promise<Response> => {
         summary.sheltersUpserted = shelters.length;
       }
 
-      // Insert snapshot rows (one per shelter per run)
+      // Insert snapshot rows (one per shelter per successful ingestion run).
       const snapshotRows = shelters.map((s) => ({
         shelter_id: s.id,
+        disaster_type: s.disaster_type,
         capacity: s.capacity,
         victims: s.victims,
         families: s.families,
         status: "active",
         source: "jkm_api",
         mode: "live",
+        captured_at: shelterCapturedAt,
         raw_payload: s.raw_payload,
       }));
 
@@ -117,14 +119,38 @@ Deno.serve(async (req: Request): Promise<Response> => {
         .insert(snapshotRows);
 
       if (snapshotError) {
-        summary.errors.push(`shelter_snapshots insert: ${snapshotError.message}`);
+        throw new Error(`shelter_snapshots insert: ${snapshotError.message}`);
       } else {
         summary.snapshotsInserted = snapshotRows.length;
+      }
+
+      // Close only older snapshots after the new active set is safely stored.
+      // If this update fails, readers still deduplicate by newest captured_at;
+      // this is safer than temporarily losing the entire active shelter set.
+      const { error: closeError } = await supabase
+        .from("shelter_snapshots")
+        .update({ status: "closed" })
+        .eq("status", "active")
+        .lt("captured_at", shelterCapturedAt);
+
+      if (closeError) {
+        throw new Error(`failed to close previous shelter snapshots: ${closeError.message}`);
+      }
+    } else {
+      // An empty successful response means there are currently no open
+      // shelters. Close any snapshots left active by the previous sync.
+      const { error: closeError } = await supabase
+        .from("shelter_snapshots")
+        .update({ status: "closed" })
+        .eq("status", "active");
+
+      if (closeError) {
+        throw new Error(`failed to close previous shelter snapshots: ${closeError.message}`);
       }
     }
     // If shelters.length === 0, no active emergencies — that's OK.
   } catch (err) {
-    summary.errors.push(`JKM fetch failed: ${String(err)}`);
+    summary.errors.push(`JKM shelter sync failed: ${String(err)}`);
   }
 
   // ── 2. Fetch + upsert METMalaysia weather alerts ────────────
