@@ -3,8 +3,245 @@
 import { useState, useEffect } from "react";
 import { uploadSimulationScenario, getAllSimulationScenarios, activateSimulationScenario } from "@/app/profile/sim-actions";
 import { defaultScenario } from "@/data/mock/emergency-scenarios";
-import type { EmergencyScenario } from "@/types/emergency";
+import type { AlertSeverity, EmergencyScenario, WeatherAlert } from "@/types/emergency";
+import type { EmergencyTimelineEvent, TimelineEventType } from "@/types/timeline";
+import type { PPS, WeatherForecast } from "@/app/actions";
 import * as XLSX from "xlsx";
+
+type SpreadsheetRow = Record<string, unknown>;
+
+interface SimulationScenarioSummary {
+  id: string;
+  name: string;
+  is_active: boolean;
+  created_at: string;
+}
+
+const TIMELINE_EVENT_TYPES: TimelineEventType[] = [
+  "shelter_opened",
+  "shelter_closed",
+  "shelter_capacity_changed",
+  "weather_alert_issued",
+  "weather_alert_expired",
+];
+
+const timelineEventTypeSet = new Set<string>(TIMELINE_EVENT_TYPES);
+const alertSeveritySet = new Set<AlertSeverity>([
+  "advisory",
+  "watch",
+  "warning",
+  "critical",
+]);
+const weatherAlertSourceSet = new Set<WeatherAlert["source"]>([
+  "METMalaysia",
+  "NADMA",
+  "simulation",
+]);
+
+function readText(value: unknown): string {
+  return value === null || value === undefined ? "" : String(value).trim();
+}
+
+function readOptionalText(value: unknown): string | undefined {
+  const text = readText(value);
+  return text || undefined;
+}
+
+function getErrorMessage(error: unknown, fallback: string): string {
+  return error instanceof Error && error.message ? error.message : fallback;
+}
+
+function isValidDate(value: string): boolean {
+  return !Number.isNaN(new Date(value).getTime());
+}
+
+function requireText(value: unknown, sheet: string, rowNumber: number, field: string): string {
+  const text = readText(value);
+  if (!text) {
+    throw new Error(`${sheet} row ${rowNumber}: ${field} is required.`);
+  }
+  return text;
+}
+
+function parseJsonObject(
+  value: unknown,
+  sheet: string,
+  rowNumber: number,
+  field: string
+): Record<string, unknown> {
+  if (value === null || value === undefined || value === "") return {};
+  if (typeof value === "object" && !Array.isArray(value)) {
+    return value as Record<string, unknown>;
+  }
+
+  try {
+    const parsed = JSON.parse(String(value)) as unknown;
+    if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
+      throw new Error(`${field} must be a JSON object.`);
+    }
+    return parsed as Record<string, unknown>;
+  } catch {
+    throw new Error(`${sheet} row ${rowNumber}: ${field} must contain a valid JSON object.`);
+  }
+}
+
+function parseMetadata(value: unknown, rowNumber: number): Record<string, unknown> {
+  return parseJsonObject(value, "TimelineEvents", rowNumber, "metadata");
+}
+
+function parseShelters(rows: SpreadsheetRow[]): PPS[] {
+  return rows.map((row, index) => {
+    const rowNumber = index + 2;
+    const operationalStatus = readOptionalText(row.operationalStatus);
+
+    if (
+      operationalStatus &&
+      !["active", "inactive", "unknown"].includes(operationalStatus)
+    ) {
+      throw new Error(
+        `Shelters row ${rowNumber}: operationalStatus must be active, inactive, or unknown.`
+      );
+    }
+
+    return {
+      id: requireText(row.id, "Shelters", rowNumber, "id"),
+      name: requireText(row.name, "Shelters", rowNumber, "name"),
+      latti: requireText(row.latti, "Shelters", rowNumber, "latti"),
+      longi: requireText(row.longi, "Shelters", rowNumber, "longi"),
+      negeri: requireText(row.negeri, "Shelters", rowNumber, "negeri"),
+      daerah: requireText(row.daerah, "Shelters", rowNumber, "daerah"),
+      mukim: readText(row.mukim),
+      bencana: readText(row.bencana),
+      disasterType: readOptionalText(row.disasterType),
+      mangsa: readText(row.mangsa) || "0",
+      keluarga: readText(row.keluarga) || "0",
+      kapasiti: readText(row.kapasiti) || "0.00%",
+      // The old workbook did not include status, so active is the compatibility default.
+      status: readText(row.status) || "active",
+      operationalStatus: operationalStatus as PPS["operationalStatus"],
+      lastUpdatedAt: readOptionalText(row.lastUpdatedAt),
+    };
+  });
+}
+
+function parseWeatherAlerts(rows: SpreadsheetRow[]): WeatherAlert[] {
+  return rows.map((row, index) => {
+    const rowNumber = index + 2;
+    const source = readText(row.source) || "simulation";
+    const severity = readText(row.severity);
+    const issuedAt = requireText(row.issuedAt, "WeatherAlerts", rowNumber, "issuedAt");
+
+    if (!weatherAlertSourceSet.has(source as WeatherAlert["source"])) {
+      throw new Error(
+        `WeatherAlerts row ${rowNumber}: source must be METMalaysia, NADMA, or simulation.`
+      );
+    }
+    if (!alertSeveritySet.has(severity as AlertSeverity)) {
+      throw new Error(
+        `WeatherAlerts row ${rowNumber}: severity must be advisory, watch, warning, or critical.`
+      );
+    }
+    if (!isValidDate(issuedAt)) {
+      throw new Error(`WeatherAlerts row ${rowNumber}: issuedAt must be a valid date and time.`);
+    }
+
+    return {
+      id: requireText(row.id, "WeatherAlerts", rowNumber, "id"),
+      source: source as WeatherAlert["source"],
+      title: requireText(row.title, "WeatherAlerts", rowNumber, "title"),
+      titleBm: readOptionalText(row.titleBm),
+      description: readText(row.description),
+      descriptionBm: readOptionalText(row.descriptionBm),
+      severity: severity as AlertSeverity,
+      affectedArea: requireText(row.affectedArea, "WeatherAlerts", rowNumber, "affectedArea"),
+      issuedAt: new Date(issuedAt).toISOString(),
+      validFrom: readOptionalText(row.validFrom),
+      validTo: readOptionalText(row.validTo),
+    };
+  });
+}
+
+function parseWeatherForecasts(rows: SpreadsheetRow[]): WeatherForecast[] {
+  return rows.map((row, index) => {
+    const rowNumber = index + 2;
+    return {
+      code: requireText(row.code, "Forecasts", rowNumber, "code"),
+      station: requireText(row.station, "Forecasts", rowNumber, "station"),
+      timestamp: requireText(row.timestamp, "Forecasts", rowNumber, "timestamp"),
+      temp: requireText(row.temp, "Forecasts", rowNumber, "temp"),
+      state: requireText(row.state, "Forecasts", rowNumber, "state"),
+      rainfall: parseJsonObject(row.rainfall, "Forecasts", rowNumber, "rainfall") as Record<string, string>,
+      icon: requireText(row.icon, "Forecasts", rowNumber, "icon"),
+    };
+  });
+}
+
+/**
+ * Converts the optional TimelineEvents worksheet into the same immutable event
+ * contract used by the live timeline. Validation at this import boundary keeps
+ * malformed custom history out of timeline providers and presentation code.
+ */
+function parseTimelineEvents(rows: SpreadsheetRow[]): EmergencyTimelineEvent[] {
+  return rows.map((row, index) => {
+    const rowNumber = index + 2;
+    const eventType = readText(row.eventType);
+    const occurredAt = readText(row.occurredAt);
+    const endedAt = readOptionalText(row.endedAt);
+    const title = readText(row.title);
+
+    if (!timelineEventTypeSet.has(eventType)) {
+      throw new Error(
+        `TimelineEvents row ${rowNumber}: eventType must be one of ${TIMELINE_EVENT_TYPES.join(", ")}.`
+      );
+    }
+    if (!occurredAt || !isValidDate(occurredAt)) {
+      throw new Error(
+        `TimelineEvents row ${rowNumber}: occurredAt must be a valid date and time.`
+      );
+    }
+    if (endedAt && !isValidDate(endedAt)) {
+      throw new Error(
+        `TimelineEvents row ${rowNumber}: endedAt must be a valid date and time.`
+      );
+    }
+    if (!title) {
+      throw new Error(`TimelineEvents row ${rowNumber}: title is required.`);
+    }
+
+    return {
+      id: readOptionalText(row.id) ?? `simulation-event-${Date.now()}-${index + 1}`,
+      eventType: eventType as TimelineEventType,
+      occurredAt: new Date(occurredAt).toISOString(),
+      endedAt: endedAt ? new Date(endedAt).toISOString() : undefined,
+      shelterId: readOptionalText(row.shelterId),
+      weatherAlertId: readOptionalText(row.weatherAlertId),
+      disasterType: readOptionalText(row.disasterType),
+      state: readOptionalText(row.state),
+      district: readOptionalText(row.district),
+      title,
+      description: readOptionalText(row.description),
+      source: readOptionalText(row.source) ?? "simulation",
+      metadata: parseMetadata(row.metadata, rowNumber),
+    };
+  });
+}
+
+function rowsFromRecords(
+  records: object[],
+  headers: string[],
+  serializeObjects = false
+): unknown[][] {
+  return records.map((record) => {
+    const values = record as Record<string, unknown>;
+    return headers.map((header) => {
+      const value = values[header];
+      if (serializeObjects && typeof value === "object" && value !== null) {
+        return JSON.stringify(value ?? {});
+      }
+      return value ?? "";
+    });
+  });
+}
 
 export default function SimulationDashboard() {
   const [file, setFile] = useState<File | null>(null);
@@ -13,7 +250,7 @@ export default function SimulationDashboard() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   
-  const [scenarios, setScenarios] = useState<any[]>([]);
+  const [scenarios, setScenarios] = useState<SimulationScenarioSummary[]>([]);
   const [loadingScenarios, setLoadingScenarios] = useState(true);
 
   const fetchScenarios = async () => {
@@ -33,27 +270,35 @@ export default function SimulationDashboard() {
   }, []);
 
   const handleDownloadTemplate = () => {
-    // Define the columns based on the default scenario data
-    const shelterHeaders = ["id", "name", "latti", "longi", "negeri", "daerah", "mukim", "bencana", "mangsa", "keluarga", "kapasiti"];
+    // These columns form the documented workbook contract for custom scenarios.
+    const shelterHeaders = ["id", "name", "latti", "longi", "negeri", "daerah", "mukim", "bencana", "disasterType", "status", "operationalStatus", "mangsa", "keluarga", "kapasiti", "lastUpdatedAt"];
     const weatherAlertHeaders = ["id", "source", "title", "titleBm", "description", "descriptionBm", "severity", "affectedArea", "issuedAt", "validFrom", "validTo"];
-    const forecastHeaders = ["code", "station", "timestamp", "temp", "state", "icon"];
+    const forecastHeaders = ["code", "station", "timestamp", "temp", "state", "rainfall", "icon"];
+    const timelineEventHeaders = ["id", "eventType", "occurredAt", "endedAt", "shelterId", "weatherAlertId", "disasterType", "state", "district", "title", "description", "source", "metadata"];
 
-    // Provide some sample data
-    const sheltersData = defaultScenario.shelters.map(s => shelterHeaders.map(h => (s as any)[h] || ""));
-    const alertsData = defaultScenario.weatherAlerts.map(a => weatherAlertHeaders.map(h => (a as any)[h] || ""));
-    const forecastsData = defaultScenario.weatherForecasts.map(f => forecastHeaders.map(h => (f as any)[h] || ""));
+    // Default scenario rows provide valid, editable examples for every sheet.
+    const sheltersData = rowsFromRecords(defaultScenario.shelters, shelterHeaders);
+    const alertsData = rowsFromRecords(defaultScenario.weatherAlerts, weatherAlertHeaders);
+    const forecastsData = rowsFromRecords(defaultScenario.weatherForecasts, forecastHeaders, true);
+    const timelineEventsData = rowsFromRecords(
+      defaultScenario.timelineEvents ?? [],
+      timelineEventHeaders,
+      true
+    );
 
     const wb = XLSX.utils.book_new();
 
     const wsShelters = XLSX.utils.aoa_to_sheet([shelterHeaders, ...sheltersData]);
     const wsAlerts = XLSX.utils.aoa_to_sheet([weatherAlertHeaders, ...alertsData]);
     const wsForecasts = XLSX.utils.aoa_to_sheet([forecastHeaders, ...forecastsData]);
+    const wsTimelineEvents = XLSX.utils.aoa_to_sheet([timelineEventHeaders, ...timelineEventsData]);
 
     XLSX.utils.book_append_sheet(wb, wsShelters, "Shelters");
     XLSX.utils.book_append_sheet(wb, wsAlerts, "WeatherAlerts");
     XLSX.utils.book_append_sheet(wb, wsForecasts, "Forecasts");
+    XLSX.utils.book_append_sheet(wb, wsTimelineEvents, "TimelineEvents");
 
-    XLSX.writeFile(wb, "scenario_template.xlsx");
+    XLSX.writeFile(wb, "emergency_os_scenario_template.xlsx");
   };
 
   const handleUpload = async () => {
@@ -77,33 +322,33 @@ export default function SimulationDashboard() {
       const sheltersSheet = wb.Sheets["Shelters"];
       const alertsSheet = wb.Sheets["WeatherAlerts"];
       const forecastsSheet = wb.Sheets["Forecasts"];
+      const timelineEventsSheet = wb.Sheets["TimelineEvents"];
 
       if (!sheltersSheet) {
         throw new Error("Invalid Excel structure: Missing 'Shelters' sheet.");
       }
 
-      const shelters = XLSX.utils.sheet_to_json(sheltersSheet) as any[];
-      const weatherAlerts = alertsSheet ? (XLSX.utils.sheet_to_json(alertsSheet) as any[]) : [];
-      const weatherForecasts = forecastsSheet ? (XLSX.utils.sheet_to_json(forecastsSheet) as any[]) : [];
-
-      // Validate coordinates in shelters
-      const validShelters = shelters.map(s => ({
-        ...s,
-        latti: String(s.latti),
-        longi: String(s.longi),
-        mangsa: String(s.mangsa || "0"),
-        keluarga: String(s.keluarga || "0"),
-        kapasiti: String(s.kapasiti || "0.00%")
-      }));
+      const shelters = parseShelters(XLSX.utils.sheet_to_json<SpreadsheetRow>(sheltersSheet));
+      const weatherAlerts = alertsSheet
+        ? parseWeatherAlerts(XLSX.utils.sheet_to_json<SpreadsheetRow>(alertsSheet))
+        : [];
+      const weatherForecasts = forecastsSheet
+        ? parseWeatherForecasts(XLSX.utils.sheet_to_json<SpreadsheetRow>(forecastsSheet))
+        : [];
+      // Older workbooks remain valid because TimelineEvents is intentionally optional.
+      const timelineEvents = timelineEventsSheet
+        ? parseTimelineEvents(XLSX.utils.sheet_to_json<SpreadsheetRow>(timelineEventsSheet))
+        : [];
 
       // Construct Scenario
       const jsonData: EmergencyScenario = {
         id: "sim-" + Date.now(),
         name: scenarioName,
         description: "Uploaded via Simulation Dashboard",
-        shelters: validShelters,
+        shelters,
         weatherAlerts,
         weatherForecasts,
+        timelineEvents,
         // The rest can be empty or defaulted
         savedLocations: [],
         alertPreferences: [],
@@ -115,14 +360,14 @@ export default function SimulationDashboard() {
         dataSources: []
       };
 
-      const plainJsonData = JSON.parse(JSON.stringify(jsonData));
+      const plainJsonData = JSON.parse(JSON.stringify(jsonData)) as EmergencyScenario;
       await uploadSimulationScenario(scenarioName, plainJsonData);
-      setSuccess(`Scenario "${scenarioName}" uploaded and activated successfully! Notifications regenerated.`);
+      setSuccess(`Scenario "${scenarioName}" uploaded and activated with ${timelineEvents.length} timeline events. Notifications regenerated.`);
       setFile(null);
       setScenarioName("");
       await fetchScenarios();
-    } catch (err: any) {
-      setError(err.message || "Failed to process the Excel file. Ensure it matches the template format.");
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, "Failed to process the Excel file. Ensure it matches the template format."));
     } finally {
       setLoading(false);
     }
@@ -136,8 +381,8 @@ export default function SimulationDashboard() {
       await activateSimulationScenario(id);
       setSuccess(`Switched to "${name}". Notifications regenerated based on current locations.`);
       await fetchScenarios();
-    } catch (err: any) {
-      setError(err.message || "Failed to switch scenario.");
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, "Failed to switch scenario."));
     } finally {
       setLoading(false);
     }
@@ -164,7 +409,7 @@ export default function SimulationDashboard() {
         <div className="bg-panel border border-border rounded-2xl p-6 shadow-sm">
           <h2 className="text-xl font-semibold mb-4 text-emerald-600 dark:text-emerald-400">Upload New Scenario</h2>
           <p className="text-foreground/70 mb-6 text-sm">
-            Upload an Excel (.xlsx) file with custom emergency data. This becomes your isolated test environment.
+            Upload an Excel (.xlsx) file with custom shelters, alerts, forecasts, and timeline events. This becomes your isolated test environment.
           </p>
 
           <div className="mb-6">

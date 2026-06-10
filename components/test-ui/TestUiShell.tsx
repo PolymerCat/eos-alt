@@ -8,6 +8,7 @@ const navItems = [
   { href: "/test-map", label: "Map" },
   { href: "/weather", label: "Weather" },
   { href: "/alerts", label: "Alerts" },
+  { href: "/timeline", label: "Timeline" },
   { href: "/sos", label: "SOS" },
   { href: "/reports", label: "Reports" },
   { href: "/pipeline", label: "Pipeline" },

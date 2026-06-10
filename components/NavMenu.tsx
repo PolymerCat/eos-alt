@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { logout } from "@/app/login/actions";
-import { Menu, X, User, LogOut, LayoutDashboard, Map } from "lucide-react";
+import { Menu, X, User, LogOut, LayoutDashboard, Map, Clock3 } from "lucide-react";
 
 interface NavMenuProps {
   userEmail: string;
@@ -76,6 +76,15 @@ export default function NavMenu({ userEmail }: NavMenuProps) {
               >
                 <LayoutDashboard className="h-4 w-4 text-foreground/60" />
                 Simulation
+              </Link>
+
+              <Link
+                href="/timeline"
+                onClick={() => setIsOpen(false)}
+                className="flex items-center gap-2 px-3 py-2 text-sm text-foreground/80 hover:text-accent hover:bg-foreground/5 rounded-md transition-colors"
+              >
+                <Clock3 className="h-4 w-4 text-foreground/60" />
+                Timeline
               </Link>
 
               <Link

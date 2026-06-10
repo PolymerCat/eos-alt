@@ -82,6 +82,7 @@ export async function uploadSimulationScenario(name: string, data: EmergencyScen
   await wipeAndRegenerateNotifications(user.id);
 
   revalidatePath("/test-map");
+  revalidatePath("/timeline");
   revalidatePath("/profile");
   revalidatePath("/simulation");
 }
@@ -132,6 +133,7 @@ export async function activateSimulationScenario(scenarioId: string) {
   await wipeAndRegenerateNotifications(user.id);
 
   revalidatePath("/test-map");
+  revalidatePath("/timeline");
   revalidatePath("/profile");
   revalidatePath("/simulation");
 }

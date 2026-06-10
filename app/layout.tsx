@@ -80,10 +80,13 @@ export default async function RootLayout({
               </div>
               <nav className="hidden md:flex space-x-2 font-medium text-sm mr-8">
                 <Link href="/" className="px-4 py-2 text-foreground/80 hover:text-accent hover:bg-foreground/5 rounded-md transition-colors">
-                  Overview
+                  Dashboard
                 </Link>
                 <Link href="/test-map" className="px-4 py-2 text-foreground/80 hover:text-accent hover:bg-foreground/5 rounded-md transition-colors">
                   Map
+                </Link>
+                <Link href="/timeline" className="px-4 py-2 text-foreground/80 hover:text-accent hover:bg-foreground/5 rounded-md transition-colors">
+                  Timeline
                 </Link>
                 <Link href="/simulation" className="px-4 py-2 text-foreground/80 hover:text-accent hover:bg-foreground/5 rounded-md transition-colors">
                   Simulation

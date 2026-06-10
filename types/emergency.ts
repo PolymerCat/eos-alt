@@ -1,4 +1,5 @@
 import type { PPS, WeatherWarning, WeatherForecast } from "@/app/actions";
+import type { EmergencyTimelineEvent } from "@/types/timeline";
 
 export type DataMode = "live" | "simulation";
 
@@ -121,6 +122,7 @@ export interface EmergencyScenario {
   governmentNotices: GovernmentNotice[];
   reports: EmergencyReport[];
   dataSources: DataSourceStatus[];
+  timelineEvents?: EmergencyTimelineEvent[];
 }
 
 export interface EmergencyDataSnapshot {
