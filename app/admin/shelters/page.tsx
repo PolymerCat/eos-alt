@@ -46,14 +46,14 @@ export default async function AdminSheltersPage() {
               const isOnline = shelter.status !== "offline";
 
               return (
-                <article key={shelter.id} className="rounded-lg border border-border bg-panel p-4 shadow-sm">
+                <article key={shelter.id} className="min-w-0 rounded-lg border border-border bg-panel p-4 shadow-sm">
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <div className="min-w-0">
-                      <h3 className="font-semibold text-foreground">{shelter.name}</h3>
-                      <p className="mt-1 text-sm text-foreground/60">
+                      <h3 className="font-semibold text-foreground [overflow-wrap:anywhere]">{shelter.name}</h3>
+                      <p className="mt-1 text-sm text-foreground/60 [overflow-wrap:anywhere]">
                         {shelter.negeri} / {shelter.daerah}
                       </p>
-                      <p className="mt-2 text-xs font-medium text-foreground/45">
+                      <p className="mt-2 break-all text-xs font-medium text-foreground/45">
                         {shelter.latti}, {shelter.longi}
                       </p>
                       <div className="mt-3">
@@ -62,7 +62,7 @@ export default async function AdminSheltersPage() {
                     </div>
                     <AdminStatusPill label={isOnline ? "online" : "offline"} tone={isOnline ? "green" : "gray"} />
                   </div>
-                  <div className="mt-4 grid grid-cols-3 gap-2 text-sm">
+                  <div className="mt-4 grid grid-cols-1 gap-2 text-sm min-[390px]:grid-cols-3">
                     <div className="rounded-md border border-border bg-background p-3">
                       <p className="text-xs text-foreground/45">Victims</p>
                       <p className="mt-1 font-semibold text-foreground">{shelter.mangsa}</p>

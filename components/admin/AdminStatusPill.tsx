@@ -13,7 +13,7 @@ const toneClassName: Record<NonNullable<AdminStatusPillProps["tone"]>, string> =
 
 export default function AdminStatusPill({ label, tone = "gray" }: AdminStatusPillProps) {
   return (
-    <span className={`inline-flex w-fit rounded-full border px-2.5 py-1 text-xs font-semibold ${toneClassName[tone]}`}>
+    <span className={`inline-flex w-fit max-w-full shrink-0 rounded-full border px-2.5 py-1 text-xs font-semibold [overflow-wrap:anywhere] ${toneClassName[tone]}`}>
       {label}
     </span>
   );

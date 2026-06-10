@@ -13,11 +13,11 @@ export default async function AdminSimulationPage() {
         description="Inspect the active simulation scenario and the records it provides to prototype pages."
       />
 
-      <div className="rounded-lg border border-border bg-panel p-5 shadow-sm">
+      <div className="min-w-0 rounded-lg border border-border bg-panel p-4 shadow-sm sm:p-5">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-          <div>
+          <div className="min-w-0">
             <p className="text-xs font-semibold uppercase tracking-wide text-foreground/45">Active scenario</p>
-            <h3 className="mt-1 text-xl font-bold text-foreground">{data.scenarioName ?? "Default simulation"}</h3>
+            <h3 className="mt-1 text-xl font-bold text-foreground [overflow-wrap:anywhere]">{data.scenarioName ?? "Default simulation"}</h3>
           </div>
           <AdminStatusPill label="simulated" tone="blue" />
         </div>
@@ -30,7 +30,7 @@ export default async function AdminSimulationPage() {
         <StatCard label="SOS Requests" value={data.sosRequests.length} detail="Scenario SOS records" mode="simulation" />
       </div>
 
-      <section className="mt-6 rounded-lg border border-border bg-panel p-5 shadow-sm">
+      <section className="mt-6 rounded-lg border border-border bg-panel p-4 shadow-sm sm:p-5">
         <h3 className="font-semibold text-foreground">Import / Refresh Direction</h3>
         <div className="mt-3 grid gap-2 text-sm leading-6 text-foreground/65">
           <p>Current simulation mode reads scenario objects through the shared provider.</p>

@@ -25,19 +25,19 @@ export default async function AdminAlertsPage() {
       ) : (
         <div className="grid gap-4">
           {data.weatherAlerts.map((alert) => (
-            <article key={alert.id} className="rounded-lg border border-border bg-panel p-5 shadow-sm">
+            <article key={alert.id} className="min-w-0 rounded-lg border border-border bg-panel p-4 shadow-sm sm:p-5">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                <div>
-                  <h3 className="font-semibold text-foreground">{alert.title}</h3>
+                <div className="min-w-0">
+                  <h3 className="font-semibold text-foreground [overflow-wrap:anywhere]">{alert.title}</h3>
                   <p className="mt-1 text-sm text-foreground/50">{alert.source}</p>
                 </div>
                 <AdminStatusPill label={alert.severity} tone={severityTone(alert.severity)} />
               </div>
-              <p className="mt-4 text-sm leading-6 text-foreground/65">{alert.description || "No description available."}</p>
+              <p className="mt-4 text-sm leading-6 text-foreground/65 [overflow-wrap:anywhere]">{alert.description || "No description available."}</p>
               <div className="mt-4 grid gap-2 text-sm sm:grid-cols-3">
                 <p className="rounded-md border border-border bg-background p-3">
                   <span className="block text-xs text-foreground/45">Affected area</span>
-                  <span className="mt-1 block font-medium text-foreground">{alert.affectedArea || "Not listed"}</span>
+                  <span className="mt-1 block font-medium text-foreground [overflow-wrap:anywhere]">{alert.affectedArea || "Not listed"}</span>
                 </p>
                 <p className="rounded-md border border-border bg-background p-3">
                   <span className="block text-xs text-foreground/45">Issued</span>

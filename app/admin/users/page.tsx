@@ -46,10 +46,10 @@ export default async function AdminUsersPage() {
       ) : (
         <div className="grid gap-3">
           {profiles.map((profile) => (
-            <article key={profile.id} className="rounded-lg border border-border bg-panel p-4 shadow-sm">
+            <article key={profile.id} className="min-w-0 rounded-lg border border-border bg-panel p-4 shadow-sm">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div className="min-w-0">
-                  <h3 className="font-semibold text-foreground">{profile.full_name || "Unnamed user"}</h3>
+                  <h3 className="font-semibold text-foreground [overflow-wrap:anywhere]">{profile.full_name || "Unnamed user"}</h3>
                   <p className="mt-1 truncate text-xs text-foreground/45">{profile.id}</p>
                   <p className="mt-2 text-sm text-foreground/60">{profile.phone_number || "No phone number saved"}</p>
                 </div>

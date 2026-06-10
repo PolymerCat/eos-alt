@@ -23,15 +23,15 @@ export default async function AdminDataSourcesPage() {
 
       <div className="grid gap-4">
         {data.dataSources.map((source) => (
-          <article key={source.id} className="rounded-lg border border-border bg-panel p-5 shadow-sm">
+          <article key={source.id} className="min-w-0 rounded-lg border border-border bg-panel p-4 shadow-sm sm:p-5">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-              <div>
-                <h3 className="font-semibold text-foreground">{source.name}</h3>
+              <div className="min-w-0">
+                <h3 className="font-semibold text-foreground [overflow-wrap:anywhere]">{source.name}</h3>
                 <p className="mt-1 text-sm capitalize text-foreground/50">{source.type.replace("_", " ")}</p>
               </div>
               <AdminStatusPill label={source.status} tone={getSourceTone(source.status)} />
             </div>
-            <p className="mt-4 text-sm leading-6 text-foreground/65">{source.notes}</p>
+            <p className="mt-4 text-sm leading-6 text-foreground/65 [overflow-wrap:anywhere]">{source.notes}</p>
             <p className="mt-3 text-xs font-medium text-foreground/45">
               Last checked: {new Date(source.lastCheckedAt).toLocaleString("en-MY")}
             </p>

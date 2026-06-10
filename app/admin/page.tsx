@@ -30,14 +30,14 @@ export default async function AdminOverviewPage() {
       </div>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-2">
-        <section className="rounded-lg border border-border bg-panel p-5 shadow-sm">
+        <section className="rounded-lg border border-border bg-panel p-4 shadow-sm sm:p-5">
           <h3 className="font-semibold text-foreground">Data Source Health</h3>
           <div className="mt-4 grid gap-3">
             {data.dataSources.map((source) => (
               <article key={source.id} className="rounded-md border border-border bg-background p-4">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <h4 className="font-semibold text-foreground">{source.name}</h4>
+                <div className="flex min-w-0 flex-col gap-3 min-[420px]:flex-row min-[420px]:items-start min-[420px]:justify-between">
+                  <div className="min-w-0">
+                    <h4 className="font-semibold text-foreground [overflow-wrap:anywhere]">{source.name}</h4>
                     <p className="mt-1 text-sm leading-6 text-foreground/60">{source.notes}</p>
                   </div>
                   <AdminStatusPill label={source.status} tone={source.status === "online" ? "green" : "amber"} />
@@ -47,15 +47,15 @@ export default async function AdminOverviewPage() {
           </div>
         </section>
 
-        <section className="rounded-lg border border-border bg-panel p-5 shadow-sm">
+        <section className="rounded-lg border border-border bg-panel p-4 shadow-sm sm:p-5">
           <h3 className="font-semibold text-foreground">Recent Alert Snapshot</h3>
           <div className="mt-4 grid gap-3">
             {data.weatherAlerts.slice(0, 4).map((alert) => (
               <article key={alert.id} className="rounded-md border border-border bg-background p-4">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <h4 className="font-semibold text-foreground">{alert.title}</h4>
-                    <p className="mt-1 text-sm text-foreground/60">{alert.affectedArea || "No affected area listed"}</p>
+                <div className="flex min-w-0 flex-col gap-3 min-[420px]:flex-row min-[420px]:items-start min-[420px]:justify-between">
+                  <div className="min-w-0">
+                    <h4 className="font-semibold text-foreground [overflow-wrap:anywhere]">{alert.title}</h4>
+                    <p className="mt-1 text-sm text-foreground/60 [overflow-wrap:anywhere]">{alert.affectedArea || "No affected area listed"}</p>
                   </div>
                   <AdminStatusPill label={alert.severity} tone={alert.severity === "critical" ? "red" : "amber"} />
                 </div>

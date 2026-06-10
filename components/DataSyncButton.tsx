@@ -60,16 +60,16 @@ export default function DataSyncButton({ compact = false }: DataSyncButtonProps)
   }
 
   return (
-    <div className="flex flex-col gap-1">
+    <div className="flex w-full flex-col gap-1 sm:w-auto">
       <button
         onClick={handleSync}
         disabled={isPending}
-        className="flex items-center gap-2 rounded-md border border-border bg-panel px-4 py-2 text-sm font-medium text-foreground transition-all hover:border-accent hover:text-accent disabled:cursor-not-allowed disabled:opacity-50"
+        className="flex min-h-10 w-full items-center justify-center gap-2 rounded-md border border-border bg-panel px-4 py-2 text-sm font-medium text-foreground transition-all hover:border-accent hover:text-accent disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
       >
         <RefreshIcon spinning={isPending} />
         {isPending ? "Syncing..." : "Refresh Live Data"}
       </button>
-      <p className="text-xs text-foreground/40">{lastSyncedLabel}</p>
+      <p className="text-center text-xs text-foreground/40 sm:text-left">{lastSyncedLabel}</p>
     </div>
   );
 }
