@@ -19,7 +19,7 @@ export async function login(formData: FormData) {
   }
 
   revalidatePath("/", "layout");
-  redirect("/");
+  redirect("/?authToast=login_success");
 }
 
 export async function signup(formData: FormData) {

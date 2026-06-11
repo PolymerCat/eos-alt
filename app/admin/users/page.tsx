@@ -1,6 +1,8 @@
 import AdminEmptyState from "@/components/admin/AdminEmptyState";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import AdminStatusPill from "@/components/admin/AdminStatusPill";
+import DeleteUserButton from "@/components/admin/DeleteUserButton";
+import { getAdminAccess } from "@/lib/admin/auth";
 import { createClient } from "@/utils/supabase/server";
 
 type ProfileRow = {
@@ -11,7 +13,13 @@ type ProfileRow = {
   created_at: string | null;
 };
 
-async function getProfiles(): Promise<{ profiles: ProfileRow[]; error?: string }> {
+type ProfilesResult = {
+  profiles: ProfileRow[];
+  error?: string;
+  errorCode?: string;
+};
+
+async function getProfiles(): Promise<ProfilesResult> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("profiles")
@@ -20,26 +28,31 @@ async function getProfiles(): Promise<{ profiles: ProfileRow[]; error?: string }
     .limit(50);
 
   if (error) {
-    return { profiles: [], error: error.message };
+    return { profiles: [], error: error.message, errorCode: error.code };
   }
 
   return { profiles: (data ?? []) as ProfileRow[] };
 }
 
 export default async function AdminUsersPage() {
-  const { profiles, error } = await getProfiles();
+  const access = await getAdminAccess();
+  const { profiles, error, errorCode } = await getProfiles();
+  const errorDescription =
+    errorCode === "42703"
+      ? `Supabase profile schema is outdated: ${error}. Apply migration 012_admin_profile_management.sql.`
+      : `Supabase could not read profiles: ${error}. Confirm migration 012 is applied and the signed-in profile has role = 'admin'.`;
 
   return (
     <>
       <AdminPageHeader
         title="User Management"
-        description="Read-only first pass for account monitoring. Role editing should be added after admin RLS policies are finalized."
+        description="Monitor accounts and permanently remove regular users when required. Admin accounts are protected from deletion."
       />
 
       {error ? (
         <AdminEmptyState
           title="User records are not readable yet"
-          description={`Supabase returned: ${error}. Add admin RLS policies before enabling full user management.`}
+          description={errorDescription}
         />
       ) : profiles.length === 0 ? (
         <AdminEmptyState title="No profiles found" description="Profiles will appear here after users create or update their account details." />
@@ -53,7 +66,15 @@ export default async function AdminUsersPage() {
                   <p className="mt-1 truncate text-xs text-foreground/45">{profile.id}</p>
                   <p className="mt-2 text-sm text-foreground/60">{profile.phone_number || "No phone number saved"}</p>
                 </div>
-                <AdminStatusPill label={profile.role ?? "user"} tone={profile.role === "admin" ? "green" : "gray"} />
+                <div className="flex shrink-0 flex-col items-start gap-2 sm:items-end">
+                  <AdminStatusPill label={profile.role ?? "user"} tone={profile.role === "admin" ? "green" : "gray"} />
+                  {profile.role !== "admin" && profile.id !== access.user?.id ? (
+                    <DeleteUserButton
+                      userId={profile.id}
+                      userLabel={profile.full_name || "Unnamed user"}
+                    />
+                  ) : null}
+                </div>
               </div>
             </article>
           ))}

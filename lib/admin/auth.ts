@@ -58,10 +58,27 @@ export async function getAdminAccess(): Promise<AdminAccess> {
     };
   }
 
+  // Compatibility for environments created before profiles.role existed.
+  // Migration 012 copies these assignments into role, after which this branch
+  // can be removed in a future cleanup.
+  const { data: legacyData, error: legacyError } = await supabase
+    .from("profiles")
+    .select("is_admin")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  if (!legacyError && legacyData?.is_admin === true) {
+    return {
+      isAdmin: true,
+      user: { id: user.id, email: user.email },
+      reason: "Granted by legacy profiles.is_admin. Apply migration 012.",
+    };
+  }
+
   return {
     isAdmin: false,
     user: { id: user.id, email: user.email },
-    reason: error
+    reason: error && legacyError
       ? "Admin role could not be read. Configure ADMIN_EMAILS or apply the admin role migration."
       : "User is not marked as admin.",
   };

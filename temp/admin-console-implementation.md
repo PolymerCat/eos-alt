@@ -11,7 +11,7 @@ Current pages:
 - `/admin/shelters` - shelter monitoring
 - `/admin/alerts` - stored weather alert view
 - `/admin/simulation` - simulation scenario status
-- `/admin/users` - read-only profile monitoring
+- `/admin/users` - profile monitoring and protected regular-user deletion
 
 This follows the admin use-case diagram in `/temp`, focusing first on operational monitoring and data-system control.
 
@@ -37,7 +37,7 @@ ADMIN_EMAILS=admin@example.com,second-admin@example.com
 
 If the user is not signed in, `/admin` redirects to `/login`. If the user is signed in but not admin, the route shows a clear forbidden page instead of rendering admin data.
 
-## Migration Added
+## Migrations Added
 
 ```txt
 supabase/migrations/008_admin_roles.sql
@@ -54,6 +54,24 @@ with a check constraint:
 ```txt
 user | admin
 ```
+
+```txt
+supabase/migrations/012_admin_profile_management.sql
+```
+
+Migration 012 repairs environments where earlier profile migrations were not
+applied consistently. It:
+
+```txt
+adds phone_number and phone_verified when missing
+adds and validates profiles.role when missing
+migrates legacy is_admin = true records to role = admin
+adds a non-recursive is_admin() database helper
+allows authenticated admins to read all profiles through RLS
+```
+
+The user-management page remains read-only. Migration 012 does not give admins
+permission to edit another user's profile or role.
 
 ## Components Added
 
@@ -140,16 +158,41 @@ Simulation import is not implemented yet. The page documents the next direction:
 
 ### `/admin/users`
 
-Currently read-only.
-
-It attempts to read profiles and displays:
+It reads profiles and displays:
 
 - full name
 - profile id
 - phone number
 - role
 
-If Supabase RLS blocks profile reads, the page explains that admin RLS policies are needed before full user management is enabled.
+If the profile schema or RLS policy is unavailable, the page identifies
+migration 012 as the required repair.
+
+Admins can permanently remove regular users. The deletion workflow:
+
+```txt
+requires authenticated admin access
+rejects invalid user IDs
+prevents self-deletion
+prevents deletion of another admin account
+requires a confirmation dialog
+deletes the Supabase Auth identity through the server-only admin API
+relies on ON DELETE CASCADE foreign keys for user-owned records
+revalidates the user-management page
+```
+
+The following server-only environment variable is required:
+
+```txt
+SUPABASE_SERVICE_ROLE_KEY=<Supabase project service-role key>
+```
+
+Never prefix this variable with `NEXT_PUBLIC_` and never expose it to browser
+components. It bypasses Row-Level Security and must only be available to the
+trusted Next.js server environment.
+
+Deleting only a row from `profiles` is intentionally not supported because the
+person would retain their Supabase Auth account and could continue signing in.
 
 ## Best Practices Used
 
@@ -157,16 +200,43 @@ If Supabase RLS blocks profile reads, the page explains that admin RLS policies 
 - Admin pages reuse the shared data provider instead of calling external APIs directly.
 - Sync actions are reused instead of duplicated.
 - Mobile-heavy pages cap large lists for performance.
-- User management is read-only until role/RLS policy is hardened.
+- User deletion uses the server-only Supabase Auth admin API.
+- Admin and self-deletion are blocked from the user-management page.
 - Components are small and reusable.
 
 ## Next Steps
 
-1. Apply `008_admin_roles.sql` in Supabase.
+1. Apply migrations through `012_admin_profile_management.sql` in Supabase.
 2. Set at least one admin either by:
    - updating `profiles.role = 'admin'`, or
    - adding `ADMIN_EMAILS` in `.env.local`
-3. Add admin RLS policies for reading profiles.
-4. Add role editing after RLS is confirmed.
-5. Add simulation import tables and import action.
-6. Add historical views for shelter snapshots and alert timelines.
+3. Ensure an `ADMIN_EMAILS` fallback account also has `profiles.role = 'admin'`
+   before expecting database RLS to allow the user-management list.
+4. Configure `SUPABASE_SERVICE_ROLE_KEY` in the trusted server environment to
+   enable permanent regular-user deletion.
+5. Add role editing only after a separate audited admin-write policy is designed.
+6. Add simulation import tables and import action.
+7. Add historical views for shelter snapshots and alert timelines.
+
+### Applying Migration 012
+
+Run the contents of:
+
+```txt
+supabase/migrations/012_admin_profile_management.sql
+```
+
+in the Supabase SQL Editor or through the project's migration deployment
+workflow. Then assign an admin role when no legacy `is_admin` assignment exists:
+
+```sql
+UPDATE public.profiles
+SET role = 'admin'
+WHERE id = '<authenticated-user-uuid>';
+```
+
+Rollback removes only the admin read policy and helper:
+
+```txt
+supabase/rollback/012_admin_profile_management.sql
+```

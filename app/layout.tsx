@@ -3,34 +3,17 @@ import { Inter, JetBrains_Mono } from "next/font/google";
 import { Toaster } from "sonner";
 import Link from "next/link";
 import AuthButton from "@/components/AuthButton";
+import AuthToast from "@/components/AuthToast";
 import OfflineBanner from "@/components/pwa/OfflineBanner";
 import "./globals.css";
-import { createClient } from "@/utils/supabase/server";
+import { getAdminAccess } from "@/lib/admin/auth";
 //import 'maplibre-gl/dist/maplibre-gl.css';
 
 
 
 export async function getAdmin() {
-  let isAdmin: boolean = false;
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return null;
-  const { data, error } = await supabase
-    .from("profiles")
-    .select("*")
-    .eq("id", user.id)
-    .single();
-
-  if (error && error.code !== "PGRST116") {
-    // PGRST116 means no row found, which is fine for new users
-    console.error("Error fetching profile:", error);
-  }
-
-  if (data) {
-    isAdmin = data.is_admin;
-  }
-
-  return isAdmin;
+  const access = await getAdminAccess();
+  return access.isAdmin;
 }
 
 
@@ -91,6 +74,12 @@ export default async function RootLayout({
                 <Link href="/simulation" className="px-4 py-2 text-foreground/80 hover:text-accent hover:bg-foreground/5 rounded-md transition-colors">
                   Simulation
                 </Link>
+                <Link href="/sos" className="px-4 py-2 text-foreground/80 hover:text-accent hover:bg-foreground/5 rounded-md transition-colors">
+                  SOS
+                </Link>
+                <Link href="/reports" className="px-4 py-2 text-foreground/80 hover:text-accent hover:bg-foreground/5 rounded-md transition-colors">
+                  Reports
+                </Link>
                 {
                   (admin) ? <Link href="/admin" className="px-4 py-2 text-foreground/80 hover:text-accent hover:bg-foreground/5 rounded-md transition-colors"> Admin</Link> : ""
                 }
@@ -116,6 +105,7 @@ export default async function RootLayout({
             },
           }}
         />
+        <AuthToast />
       </body>
     </html>
   );
