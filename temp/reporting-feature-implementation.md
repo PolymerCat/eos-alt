@@ -7,7 +7,7 @@ The first reporting implementation supports:
 - Situation Brief report type
 - Public sharing audience
 - On-page report preview
-- PDF download
+- Styled browser print / Save as PDF
 - Live/simulation mode labels
 - No report persistence yet
 - Public information only; no personalization context
@@ -47,20 +47,48 @@ GeneratedReport
 
 This file has no React, browser, or Supabase dependency. That makes it easier to test and keeps the preview/PDF output consistent because both use the same generated report object.
 
-### `lib/reporting/pdf.ts`
+### Styled PDF Output
 
-Creates a lightweight single-page PDF Blob from a `GeneratedReport`.
+The report preview is now the printable document. Selecting:
 
-For this first version, the project does not add a heavy PDF dependency. This keeps the bundle smaller and avoids extra install/network requirements. The PDF generator is intentionally simple and text-focused.
+```txt
+Print / Save as PDF
+```
 
-Future versions can replace this with `@react-pdf/renderer` if richer layout, pagination, tables, logos, or multi-page reports become necessary.
+opens the browser print dialog. Choosing `Save as PDF` preserves the preview's:
+
+```txt
+title and mode badge
+summary typography
+metric cards
+section icons and bullets
+online shelter cards
+status colors
+disclaimer panel
+```
+
+Dedicated `@media print` rules in `app/globals.css`:
+
+```txt
+hide navigation, controls, and unrelated page content
+show only ReportPreview
+use A4 portrait layout
+retain colors during printing
+remove browser-only shadows
+keep metric and shelter cards together when possible
+use three metric columns and two shelter columns on paper
+```
+
+The previous hand-built plain-text generator in `lib/reporting/pdf.ts` was
+removed. Keeping one visual report implementation prevents preview/PDF design
+drift.
 
 ### `components/reports/ReportBuilder.tsx`
 
 Client component for:
 
 - generating a preview
-- downloading the PDF
+- opening the styled browser PDF workflow
 - showing the fixed first-scope controls
 - avoiding refetches when generating the report
 
@@ -100,7 +128,7 @@ It no longer depends on `data.reports[0]`, so live mode can generate reports eve
 - The report builder is pure and isolated from UI code.
 - The PDF output and page preview use the same `GeneratedReport` object.
 - Report content is structured as points instead of dense paragraphs.
-- PDF generation runs only when the user clicks download.
+- The print dialog opens only when the user clicks `Print / Save as PDF`.
 - The public report excludes private emergency contact details.
 - The public report excludes saved-location, notification, and SOS personalization context.
 - Simulation mode is clearly labeled in the generated report and disclaimer.
@@ -108,15 +136,16 @@ It no longer depends on `data.reports[0]`, so live mode can generate reports eve
 ## Performance Notes
 
 - The report is built from the already-loaded snapshot, so changing report controls does not trigger another API request.
-- PDF generation is deferred until download, keeping initial mobile page load lighter.
-- No new PDF package was added for the first version.
+- No PDF package or server browser runtime is required.
+- Browser print rendering reuses the already-rendered preview.
 - The preview component renders lightweight icons, simple text, and metrics, avoiding heavy client-side charts or map snapshots.
 
 ## Current Limitations
 
-- PDF output is single-page and text-only.
+- Exact pagination can vary slightly between browser print engines.
+- Users must select `Save as PDF` in the browser print dialog.
 - Only one report type and one audience are enabled.
 - Reports are not saved to Supabase yet.
-- The PDF does not include maps, logos, or charts.
+- The report does not include maps, logos, or charts.
 
 These limitations are intentional for the first working version.

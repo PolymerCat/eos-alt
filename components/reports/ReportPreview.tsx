@@ -32,8 +32,8 @@ function getIcon(icon: string) {
 
 export default function ReportPreview({ report }: ReportPreviewProps) {
   return (
-    <article className="rounded-lg border border-border bg-panel p-5 shadow-sm sm:p-6">
-      <div className="flex flex-wrap items-start justify-between gap-3">
+    <article className="report-print-root rounded-lg border border-border bg-panel p-5 shadow-sm sm:p-6">
+      <div className="report-print-header flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="text-xs font-semibold uppercase text-foreground/50">
             Generated {formatReportDate(report.generatedAt)}
@@ -45,9 +45,9 @@ export default function ReportPreview({ report }: ReportPreviewProps) {
 
       <p className="mt-4 text-sm leading-6 text-foreground/70">{report.summary}</p>
 
-      <dl className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-3">
+      <dl className="report-print-metrics mt-5 grid grid-cols-2 gap-3 md:grid-cols-3">
         {report.metrics.map((metric) => (
-          <div key={metric.label} className="rounded-md border border-border bg-background p-3">
+          <div key={metric.label} className="report-print-metric rounded-md border border-border bg-background p-3">
             <dt className="flex items-center gap-2 text-xs font-semibold text-foreground/50">
               {(() => {
                 const Icon = getIcon(metric.icon);
@@ -62,7 +62,7 @@ export default function ReportPreview({ report }: ReportPreviewProps) {
 
       <div className="mt-6 flex flex-col gap-4">
         {report.sections.map((section) => (
-          <section key={section.heading} className="border-t border-border pt-4">
+          <section key={section.heading} className="report-print-section border-t border-border pt-4">
             <div className="flex items-center gap-2">
               {(() => {
                 const Icon = getIcon(section.icon);
@@ -83,10 +83,10 @@ export default function ReportPreview({ report }: ReportPreviewProps) {
               ))}
             </ul>
             {section.icon === "shelter" ? (
-              <div className="mt-4 grid gap-3 md:grid-cols-2">
+              <div className="report-print-shelters mt-4 grid gap-3 md:grid-cols-2">
                 {report.onlineShelters.length > 0 ? (
                   report.onlineShelters.map((shelter) => (
-                    <article key={shelter.id} className="rounded-md border border-border bg-background p-4">
+                    <article key={shelter.id} className="report-print-shelter rounded-md border border-border bg-background p-4">
                       <div className="flex items-start gap-3">
                         <span
                           aria-label="Online shelter"

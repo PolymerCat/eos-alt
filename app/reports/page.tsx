@@ -14,7 +14,7 @@ export default async function TestUiReportsPage({
   return (
     <TestUiShell
       title="Report Generation and Share Preview"
-      description="Generate a public situation brief from the selected emergency data mode and download it as a PDF."
+      description="Generate a public situation brief from the selected emergency data mode and save the styled preview as a PDF."
       mode={mode}
       pathname="/reports"
     >

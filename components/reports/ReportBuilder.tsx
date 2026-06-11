@@ -1,11 +1,10 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Download, FileText, RefreshCw } from "lucide-react";
+import { FileText, Printer, RefreshCw } from "lucide-react";
 import type { EmergencyDataSnapshot } from "@/types/emergency";
 import type { GeneratedReport } from "@/types/reporting";
 import { buildSituationBriefReport } from "@/lib/reporting/build-report";
-import { downloadReportPdf } from "@/lib/reporting/pdf";
 import PageSection from "@/components/test-ui/PageSection";
 import ReportPreview from "@/components/reports/ReportPreview";
 
@@ -15,7 +14,6 @@ interface ReportBuilderProps {
 
 export default function ReportBuilder({ snapshot }: ReportBuilderProps) {
   const [report, setReport] = useState<GeneratedReport | null>(null);
-  const [isDownloading, setIsDownloading] = useState(false);
 
   const canGenerate = useMemo(
     () => snapshot.shelters.length > 0 || snapshot.weatherAlerts.length > 0 || snapshot.savedLocations.length > 0,
@@ -32,15 +30,9 @@ export default function ReportBuilder({ snapshot }: ReportBuilderProps) {
     );
   }
 
-  function downloadPdf() {
+  function printPdf() {
     if (!report) return;
-    setIsDownloading(true);
-
-    try {
-      downloadReportPdf(report);
-    } finally {
-      setIsDownloading(false);
-    }
+    window.print();
   }
 
   return (
@@ -87,12 +79,12 @@ export default function ReportBuilder({ snapshot }: ReportBuilderProps) {
 
             <button
               type="button"
-              onClick={downloadPdf}
-              disabled={!report || isDownloading}
+              onClick={printPdf}
+              disabled={!report}
               className="inline-flex w-full items-center justify-center gap-2 rounded-md border border-border px-4 py-2 text-sm font-semibold text-foreground transition hover:bg-background disabled:cursor-not-allowed disabled:opacity-60"
             >
-              <Download className="h-4 w-4" />
-              {isDownloading ? "Preparing PDF" : "Download PDF"}
+              <Printer className="h-4 w-4" />
+              Print / Save as PDF
             </button>
           </div>
         </div>

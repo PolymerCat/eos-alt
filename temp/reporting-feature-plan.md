@@ -208,6 +208,13 @@ Alternative:
 
 Do not use this as the primary approach because the output depends heavily on browser settings and is harder to control.
 
+### Implemented PDF Direction
+
+The implementation now uses browser print-to-PDF because matching the on-page
+preview became the higher priority. `ReportPreview` is the single visual report
+layout, with dedicated A4 print CSS. This removes the separate plain-text PDF
+renderer and prevents visual drift between preview and output.
+
 ### `components/reports/ReportBuilder.tsx`
 
 Client component for the form.
